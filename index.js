@@ -1,43 +1,48 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const axios = require("axios"); // Asegúrate de tener axios en tu package.json
 
-// Configuración de la llave desde el entorno de Replit
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-async function iniciarIA() {
-  // Definimos la Instrucción Maestra de Seguridad
-  const instruccionMaestra = `
-    Eres IA DMR4, un experto senior en Ciberseguridad y Optimización de Node.js. 
-    Tu objetivo es ayudar a Dentalmovilr4 a resolver vulnerabilidades críticas.
-    
-    REGLAS DE RESPUESTA:
-    1. Tono: Técnico, directo y profesional.
-    2. Enfoque: Siempre prioriza la seguridad (evitar Prototype Pollution, Inyección de código y Infinite Loops).
-    3. Estructura: Si detectas un error, explica 'Por qué es peligroso' y luego da la 'Solución técnica'.
-    4. Contexto: Conoces los proyectos Aura-WhatsApp-Bot y SolTrack.
-  `;
+// Configuración de Telegram (Añade estos a tus Secrets en Replit)
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
+async function enviarReporteTelegram(mensaje) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+  try {
+    await axios.post(url, {
+      chat_id: CHAT_ID,
+      text: `🛡️ **REPORTE IA DMR4**\n━━━━━━━━━━━━━━━━━━━━\n${mensaje}`,
+      parse_mode: "Markdown"
+    });
+    console.log("✅ Reporte enviado a Aura Trade AI");
+  } catch (error) {
+    console.error("❌ Error al enviar a Telegram:", error.message);
+  }
+}
+
+async function iniciarIA() {
   const model = genAI.getGenerativeModel({ 
     model: "gemini-1.5-flash",
-    systemInstruction: instruccionMaestra // Aquí inyectamos la personalidad
+    systemInstruction: "Eres IA DMR4, experto en ciberseguridad. Genera reportes concisos para Telegram."
   });
   
   const prompt = process.argv.slice(2).join(" ");
-
-  if (!prompt) {
-    console.log("\n🛸 [IA DMR4]: Esperando código o consulta técnica, colega.");
-    return;
-  }
+  if (!prompt) return;
 
   try {
     const result = await model.generateContent(prompt);
-    console.log("\n🛡️ [ANÁLISIS DE SEGURIDAD DMR4]:");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log(result.response.text());
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    const respuestaIA = result.response.text();
+
+    // Mostramos en consola y ENVIAMOS A TELEGRAM
+    console.log(respuestaIA);
+    await enviarReporteTelegram(respuestaIA);
+
   } catch (error) {
-    console.log("\n⚠️ Error técnico: Verifica cuota o API Key.");
+    await enviarReporteTelegram("⚠️ Error crítico en el motor de IA DMR4.");
   }
 }
 
 iniciarIA();
+
 
