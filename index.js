@@ -2,70 +2,117 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 const fs = require("fs");
 
-// 1. Configuración de Identidad y Seguridad
-// Usamos process.env para que GitHub Actions pase las llaves de forma segura
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const TG_TOKEN = process.env.TELEGRAM_TOKEN;
+const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-// IMPORTANTE: Usamos 'gemini-1.5-flash'. Es el más rápido y estable.
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// 🔁 MODELOS DISPONIBLES
+const modelos = [
+    "gemini-1.5-flash",
+    "gemini-1.0-pro"
+];
 
-async function ejecutarAuditoria() {
-    try {
-        console.log("🚀 Iniciando auditoría DMR4...");
-
-        // 2. Cargar base de datos de repositorios (data.json)
-        const dataPath = "./data.json";
-        let contextData = "No se encontró base de datos local.";
-        
-        if (fs.existsSync(dataPath)) {
-            contextData = fs.readFileSync(dataPath, "utf8");
-        }
-
-        // 3. Crear el Prompt para la IA
-        const prompt = `Actúa como la IA DMR4. Analiza estos repositorios de Dentalmovil: ${contextData}. 
-        Busca riesgos de seguridad, exposición de coordenadas o llaves API. 
-        Genera un reporte técnico muy breve.`;
-
-        // 4. Llamada a la API (Sin reintentos para ahorrar créditos)
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const reportText = response.text();
-
-        // 5. Envío a Telegram
-        if (process.env.TELEGRAM_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-            const TG_URL = `https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`;
-            
-            await axios.post(TG_URL, {
-                chat_id: process.env.TELEGRAM_CHAT_ID,
-                text: `🛡️ **SISTEMA DMR4: AUDITORÍA COMPLETADA** 🛡️\n\n${reportText}`,
-                parse_mode: "Markdown"
-            });
-            console.log("✅ Reporte enviado a Telegram correctamente.");
-        }
-
-    } catch (error) {
-        // Manejo inteligente de errores para no quemar intentos
-        console.error("❌ Error detectado:", error.message);
-        
-        // Si es un error de cuota (429), detenemos todo
-        if (error.message.includes("429")) {
-            console.log("⚠️ Alerta: Te has quedado sin créditos en esta API Key.");
-        }
-
-        // Notificamos el error a Telegram si es posible
+// 🧠 GENERADOR CON FALLBACK
+async function generarConFallback(prompt) {
+    for (const modelo of modelos) {
         try {
-            await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_TOKEN}/sendMessage`, {
-                chat_id: process.env.TELEGRAM_CHAT_ID,
-                text: `⚠️ **ERROR DMR4**: ${error.message}`
-            });
-        } catch (tgError) {
-            console.error("No se pudo notificar el error a Telegram.");
+            const model = genAI.getGenerativeModel({ model: modelo });
+            const result = await model.generateContent(prompt);
+            const texto = result.response.text();
+
+            console.log("✅ Modelo usado:", modelo);
+            return { texto, modelo };
+
+        } catch (error) {
+            console.log("❌ Falló modelo:", modelo);
+        }
+    }
+    throw new Error("Todos los modelos fallaron");
+}
+
+// 🔁 REINTENTOS AUTOMÁTICOS
+async function conReintento(fn, intentos = 3) {
+    for (let i = 0; i < intentos; i++) {
+        try {
+            return await fn();
+        } catch (e) {
+            console.log(`⚠️ Reintento ${i + 1}`);
+            await new Promise(r => setTimeout(r, 2000));
+        }
+    }
+    throw new Error("Falló después de varios intentos");
+}
+
+// 📊 SCORING DE RIESGO
+function calcularRiesgo(texto) {
+    let score = 0;
+    const t = texto.toLowerCase();
+
+    if (t.includes("crítico")) score += 40;
+    if (t.includes("alto")) score += 30;
+    if (t.includes("medio")) score += 20;
+    if (t.includes("bajo")) score += 10;
+
+    return Math.min(score, 100);
+}
+
+async function ejecutar() {
+    try {
+        // 📁 Leer data.json
+        let context = "";
+        if (fs.existsSync("./data.json")) {
+            context = fs.readFileSync("./data.json", "utf8");
         }
 
-        process.exit(1); // Finaliza con error para que GitHub marque la X roja
+        // 🧠 Prompt mejorado
+        const prompt = `
+Eres la IA DMR4 especializada en auditoría.
+
+Analiza:
+${context}
+
+Genera:
+- Riesgos
+- Nivel (alto, medio, bajo)
+- Recomendaciones
+- Resumen breve
+`;
+
+        // 🔥 IA con protección total
+        const { texto, modelo } = await conReintento(() =>
+            generarConFallback(prompt)
+        );
+
+        const score = calcularRiesgo(texto);
+
+        // 📩 Mensaje final
+        const mensaje = `
+🛡️ DMR4 REPORTE
+
+📊 Riesgo: ${score}/100
+🤖 Modelo: ${modelo}
+
+${texto}
+`;
+
+        // 📡 Enviar a Telegram (SIN markdown para evitar errores)
+        await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+            chat_id: TG_CHAT_ID,
+            text: mensaje
+        });
+
+        console.log("✅ Reporte enviado");
+
+    } catch (err) {
+        console.error("❌ Error:", err);
+
+        await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
+            chat_id: TG_CHAT_ID,
+            text: `⚠️ DMR4 Offline:\n${err.message}`
+        }).catch(() => {});
+
+        process.exit(1);
     }
 }
 
-ejecutarAuditoria();
-
-
+ejecutar();
