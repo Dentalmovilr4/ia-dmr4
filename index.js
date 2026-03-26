@@ -1,118 +1,55 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
 const axios = require("axios");
 const fs = require("fs");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const TG_TOKEN = process.env.TELEGRAM_TOKEN;
-const TG_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+async function ejecutarAuditoria() {
+    const apiKey = process.env.GEMINI_API_KEY;
+    const telegramToken = process.env.TELEGRAM_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
 
-// 🔁 MODELOS DISPONIBLES
-const modelos = [
-    "gemini-1.5-flash",
-    "gemini-1.0-pro"
-];
-
-// 🧠 GENERADOR CON FALLBACK
-async function generarConFallback(prompt) {
-    for (const modelo of modelos) {
-        try {
-            const model = genAI.getGenerativeModel({ model: modelo });
-            const result = await model.generateContent(prompt);
-            const texto = result.response.text();
-
-            console.log("✅ Modelo usado:", modelo);
-            return { texto, modelo };
-
-        } catch (error) {
-            console.log("❌ Falló modelo:", modelo);
-        }
+    // 1. Cargar datos locales
+    let dataContext = "Sin datos previos";
+    if (fs.existsSync("./data.json")) {
+        dataContext = fs.readFileSync("./data.json", "utf8");
     }
-    throw new Error("Todos los modelos fallaron");
-}
 
-// 🔁 REINTENTOS AUTOMÁTICOS
-async function conReintento(fn, intentos = 3) {
-    for (let i = 0; i < intentos; i++) {
-        try {
-            return await fn();
-        } catch (e) {
-            console.log(`⚠️ Reintento ${i + 1}`);
-            await new Promise(r => setTimeout(r, 2000));
-        }
-    }
-    throw new Error("Falló después de varios intentos");
-}
+    console.log("🚀 Iniciando Auditoría Directa DMR4...");
 
-// 📊 SCORING DE RIESGO
-function calcularRiesgo(texto) {
-    let score = 0;
-    const t = texto.toLowerCase();
-
-    if (t.includes("crítico")) score += 40;
-    if (t.includes("alto")) score += 30;
-    if (t.includes("medio")) score += 20;
-    if (t.includes("bajo")) score += 10;
-
-    return Math.min(score, 100);
-}
-
-async function ejecutar() {
     try {
-        // 📁 Leer data.json
-        let context = "";
-        if (fs.existsSync("./data.json")) {
-            context = fs.readFileSync("./data.json", "utf8");
-        }
+        // 2. Conexión Directa a Gemini 1.5 Flash (Ruta estable v1)
+        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        
+        const payload = {
+            contents: [{
+                parts: [{ text: `Actúa como IA DMR4. Analiza estos datos: ${dataContext}. Detecta riesgos de seguridad en repositorios de Dentalmovilr4. Sé breve.` }]
+            }]
+        };
 
-        // 🧠 Prompt mejorado
-        const prompt = `
-Eres la IA DMR4 especializada en auditoría.
+        const response = await axios.post(url, payload);
+        const report = response.data.candidates[0].content.parts[0].text;
 
-Analiza:
-${context}
-
-Genera:
-- Riesgos
-- Nivel (alto, medio, bajo)
-- Recomendaciones
-- Resumen breve
-`;
-
-        // 🔥 IA con protección total
-        const { texto, modelo } = await conReintento(() =>
-            generarConFallback(prompt)
-        );
-
-        const score = calcularRiesgo(texto);
-
-        // 📩 Mensaje final
-        const mensaje = `
-🛡️ DMR4 REPORTE
-
-📊 Riesgo: ${score}/100
-🤖 Modelo: ${modelo}
-
-${texto}
-`;
-
-        // 📡 Enviar a Telegram (SIN markdown para evitar errores)
-        await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-            chat_id: TG_CHAT_ID,
-            text: mensaje
+        // 3. Enviar a Telegram
+        await axios.post(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+            chat_id: chatId,
+            text: `🛡️ **REPORTE DMR4 ONLINE** 🛡️\n\n${report}`,
+            parse_mode: "Markdown"
         });
 
-        console.log("✅ Reporte enviado");
+        console.log("✅ ¡ÉXITO! Reporte enviado.");
 
-    } catch (err) {
-        console.error("❌ Error:", err);
+    } catch (error) {
+        console.error("❌ Error:");
+        const errorMsg = error.response ? JSON.stringify(error.response.data) : error.message;
+        console.log(errorMsg);
 
-        await axios.post(`https://api.telegram.org/bot${TG_TOKEN}/sendMessage`, {
-            chat_id: TG_CHAT_ID,
-            text: `⚠️ DMR4 Offline:\n${err.message}`
+        // Notificar fallo a Telegram
+        await axios.post(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+            chat_id: chatId,
+            text: `⚠️ **DMR4 CRITICAL FAIL**\nError: ${error.message}`
         }).catch(() => {});
-
+        
         process.exit(1);
     }
 }
 
-ejecutar();
+ejecutarAuditoria();
+
