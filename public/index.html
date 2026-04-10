@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>IA DMR4 FINAL</title>
+<style>
+body{background:#111;color:#0f0;text-align:center;font-family:Arial}
+button{padding:10px;margin:5px;border:none;border-radius:5px}
+.on{background:#0f0;color:#000}
+.off{background:#f00;color:#fff}
+</style>
+</head>
+<body>
+
+<h1>💀 IA DMR4 FINAL</h1>
+<div id="repos"></div>
+
+<script>
+async function load(){
+  const r = await fetch('/api/status');
+  const d = await r.json();
+  let h='';
+
+  d.forEach(x=>{
+    h+=`
+    <div>
+      <h3>${x.repo} (${x.puerto})</h3>
+      <button class="on" onclick="start('${x.repo}')">START</button>
+      <button class="off" onclick="stop('${x.repo}')">STOP</button>
+      <p>${x.activo?'🟢 ACTIVO':'🔴 APAGADO'}</p>
+    </div>`;
+  });
+
+  document.getElementById('repos').innerHTML=h;
+}
+
+async function start(r){await fetch('/api/start/'+r);load();}
+async function stop(r){await fetch('/api/stop/'+r);load();}
+
+setInterval(load,3000);
+load();
+</script>
+
+</body>
+</html>
