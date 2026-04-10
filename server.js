@@ -119,6 +119,6 @@ app.get('/api/stop/:repo',async(req,res)=>{
 
 app.use(express.static('public'));
 
-app.listen(6000,()=>{
-  console.log('🔥 FINAL en http://127.0.0.1:6000');
+app.listen(3000,()=>{
+  console.log('🔥 FINAL en http://127.0.0.1:3000');
 });
