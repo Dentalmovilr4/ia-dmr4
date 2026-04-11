@@ -1,45 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>IA DMR4 FINAL</title>
-<style>
-body{background:#111;color:#0f0;text-align:center;font-family:Arial}
-button{padding:10px;margin:5px;border:none;border-radius:5px}
-.on{background:#0f0;color:#000}
-.off{background:#f00;color:#fff}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IA DMR4 FINAL</title>
+    <style>
+        body { background: #0a0a0a; color: #0f0; text-align: center; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; border: 1px solid #0f0; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px #0f0; }
+        .token-card { background: #1a1a1a; border: 1px solid #00bcff; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        .repo-card { border-bottom: 1px dashed #333; padding: 15px; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .on { background: #0f0; color: #000; }
+        .on:hover { background: #0a0; }
+        .off { background: #f00; color: #fff; }
+        .off:hover { background: #a00; }
+        .status { font-weight: bold; margin-top: 10px; }
+        h1 { font-size: 1.5rem; text-shadow: 0 0 5px #0f0; }
+        .liquidez-val { color: #00bcff; font-size: 1.2rem; }
+    </style>
 </head>
 <body>
 
-<h1>💀 IA DMR4 FINAL</h1>
-<div id="repos"></div>
+<div class="container">
+    <h1>💀 IA DMR4 FINAL</h1>
+
+    <div class="token-card">
+        <h3>🪙 DRM4 COIN STATUS</h3>
+        <div id="liquidez-info">Cargando datos de Solana...</div>
+    </div>
+
+    <hr style="border: 0.5px solid #333;">
+
+    <div id="repos"></div>
+</div>
 
 <script>
-async function load(){
-  const r = await fetch('/api/status');
-  const d = await r.json();
-  let h='';
-
-  d.forEach(x=>{
-    h+=`
-    <div>
-      <h3>${x.repo} (${x.puerto})</h3>
-      <button class="on" onclick="start('${x.repo}')">START</button>
-      <button class="off" onclick="stop('${x.repo}')">STOP</button>
-      <p>${x.activo?'🟢 ACTIVO':'🔴 APAGADO'}</p>
-    </div>`;
-  });
-
-  document.getElementById('repos').innerHTML=h;
+// Función para cargar la Liquidez desde la nueva API de tu server.js
+async function updateLiquidez() {
+    try {
+        const res = await fetch('/api/liquidez');
+        const data = await res.json();
+        const div = document.getElementById('liquidez-info');
+        
+        if(data.error) {
+            div.innerHTML = `<span style="color:orange">⚠️ Conectando con red...</span>`;
+        } else if(data.liquidez > 0) {
+            div.innerHTML = `
+                <div class="liquidez-val">$${parseFloat(data.liquidez).toFixed(2)} USD</div>
+                <div style="font-size:0.8rem">Precio: $${data.precio}</div>
+                <div style="color:#0f0; font-size:0.7rem">🟢 POOL ACTIVO</div>
+            `;
+        } else {
+            div.innerHTML = `
+                <div style="color:#ff4444">⚠️ SIN LIQUIDEZ EN DEX</div>
+                <div style="font-size:0.7rem">Inyecta SOL en Raydium para activar</div>
+            `;
+        }
+    } catch(e) {
+        console.log("Error en liquidez");
+    }
 }
 
-async function start(r){await fetch('/api/start/'+r);load();}
-async function stop(r){await fetch('/api/stop/'+r);load();}
+// Función para cargar los procesos del servidor
+async function load(){
+  try {
+      const r = await fetch('/api/status');
+      const d = await r.json();
+      let h='';
 
-setInterval(load,3000);
+      d.forEach(x=>{
+        h+=`
+        <div class="repo-card">
+          <h3>${x.repo.toUpperCase()}</h3>
+          <p style="font-size: 0.8rem; color: #888;">Puerto: ${x.puerto}</p>
+          <button class="on" onclick="start('${x.repo}')">START</button>
+          <button class="off" onclick="stop('${x.repo}')">STOP</button>
+          <div class="status">${x.activo ? '🟢 ACTIVO' : '🔴 APAGADO'}</div>
+        </div>`;
+      });
+
+      document.getElementById('repos').innerHTML = h;
+  } catch(e) {
+      document.getElementById('repos').innerHTML = '<p style="color:red">Error conectando con el servidor...</p>';
+  }
+}
+
+async function start(r){ await fetch('/api/start/'+r); load(); }
+async function stop(r){ await fetch('/api/stop/'+r); load(); }
+
+// Intervalos de actualización
+setInterval(load, 3000); // Repos cada 3 segundos
+setInterval(updateLiquidez, 10000); // Liquidez cada 10 segundos
+
 load();
+updateLiquidez();
 </script>
 
 </body>
 </html>
+
