@@ -6,13 +6,14 @@ const path = require('path');
 // --- CONFIGURACIÓN ---
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
-const RUTA_BASE = process.env.RUTA_BASE || '/data/data/com.termux/files/home/proyectos-dmr4';
+// Ruta donde están todos tus proyectos en Termux
+const HOME_DIR = '/data/data/com.termux/files/home';
+const DATA_FILE = path.join(HOME_DIR, 'ia-dmr4', 'data.json');
 
-// Carpetas que NUNCA vamos a escanear para no colgar el móvil
 const IGNORE_DIRS = ['node_modules', '.git', 'dist', 'build', '.cache'];
 
 if (!TELEGRAM_TOKEN || !TELEGRAM_CHAT_ID) {
-  console.error('❌ Error: Configura TELEGRAM_TOKEN y TELEGRAM_CHAT_ID en tu .env');
+  console.error('❌ Error: Configura TOKEN y CHAT_ID en tu .env');
   process.exit(1);
 }
 
@@ -24,9 +25,7 @@ const escapeHtml = (str) =>
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' 
   }[m]));
 
-/**
- * Busca todos los archivos .js de forma recursiva ignorando carpetas prohibidas
- */
+// Busca archivos JS solo en las rutas que le pasemos
 async function obtenerArchivosJS(dir, lista = []) {
   try {
     const entradas = await fs.readdir(dir, { withFileTypes: true });
@@ -41,114 +40,103 @@ async function obtenerArchivosJS(dir, lista = []) {
       }
     }
   } catch (e) {
-    console.error(`⚠️ No se pudo acceder a: ${dir}`);
+    // Si un repo de la lista no existe, no rompemos el script
+    return lista;
   }
   return lista;
 }
 
-// --- MOTOR DE ANÁLISIS 2.0 ---
+// --- MOTOR DE ANÁLISIS ---
 function analizarContenido(codigo, nombreArchivo) {
   const hallazgos = { errores: [], sugerencias: [], criticidad: 0 };
 
-  // 1. Seguridad: Hardcoded Secrets
+  // Seguridad: Secretos
   if (/(password|secret|key|token|private_key)\s*=\s*['"][^'"]{8,}['"]/i.test(codigo)) {
-    hallazgos.errores.push("🔒 <b>Secreto expuesto:</b> Llaves detectadas directamente en el código.");
+    hallazgos.errores.push("🔒 <b>Secreto expuesto:</b> Llave detectada.");
     hallazgos.criticidad += 10;
   }
-
-  // 2. Seguridad: Inyección de dependencias (Helmet)
+  // Seguridad: Helmet
   if (codigo.includes('express()') && !codigo.includes('helmet')) {
-    hallazgos.sugerencias.push("🛡️ Falta <code>helmet</code> para proteger cabeceras HTTP.");
+    hallazgos.sugerencias.push("🛡️ Falta <code>helmet</code>.");
     hallazgos.criticidad += 2;
   }
-
-  // 3. Promesas: Control de errores
-  const promesasSinCatch = (codigo.match(/\.then\(/g) || []).length;
-  const catches = (codigo.match(/\.catch\(/g) || []).length;
-  if (promesasSinCatch > catches) {
-    hallazgos.errores.push("⚠️ <b>Promesas inestables:</b> Tienes .then() sin su respectivo .catch().");
-    hallazgos.criticidad += 5;
-  }
-
-  // 4. Inyección SQL/NoSQL básica
+  // Riesgo Inyección
   if (codigo.includes('${req.query') || codigo.includes('${req.body')) {
-    hallazgos.errores.push("🚨 <b>Riesgo de Inyección:</b> Evita concatenar variables de request en strings.");
+    hallazgos.errores.push("🚨 <b>Riesgo de Inyección:</b> Variables de request concatenadas.");
     hallazgos.criticidad += 15;
   }
-
-  // 5. Calidad: Uso de var
+  // Calidad: Var
   if (/\bvar\s+\w+/.test(codigo)) {
-    hallazgos.sugerencias.push("💡 Cambia <code>var</code> por <code>const</code> o <code>let</code>.");
+    hallazgos.sugerencias.push("💡 Usa <code>const</code> o <code>let</code>.");
   }
 
   return hallazgos;
 }
 
-// --- PROCESADOR PRINCIPAL ---
+// --- PROCESADOR INTEGRADO CON DATA.JSON ---
 async function ejecutarAuditoria() {
-  console.log('🔍 IA-DMR4: Iniciando escaneo profundo v2.0...');
+  console.log('🔍 IA-DMR4: Iniciando Auditoría desde data.json...');
   const resultados = [];
-  
+  let totalArchivosEscaneados = 0;
+
   try {
-    const archivos = await obtenerArchivosJS(RUTA_BASE);
-    
-    // CORREGIDO: Usando 'of' en lugar de 'de'
-    for (const archivo of archivos) {
-      const contenido = await fs.readFile(archivo, 'utf8');
-      const relativo = path.relative(RUTA_BASE, archivo);
-      const analisis = analizarContenido(contenido, relativo);
+    // 1. Leer el archivo data.json
+    const rawData = await fs.readFile(DATA_FILE, 'utf8');
+    const repositorios = JSON.parse(rawData);
+
+    // 2. Escanear cada proyecto de la lista
+    for (const repoName of repositorios) {
+      const rutaProyecto = path.join(HOME_DIR, repoName);
+      const archivosDelProyecto = await obtenerArchivosJS(rutaProyecto);
       
-      if (analisis.errores.length > 0 || analisis.sugerencias.length > 0) {
-        resultados.push({ archivo: relativo, ...analisis });
+      totalArchivosEscaneados += archivosDelProyecto.length;
+
+      for (const archivo of archivosDelProyecto) {
+        const contenido = await fs.readFile(archivo, 'utf8');
+        const relativo = path.relative(HOME_DIR, archivo);
+        const analisis = analizarContenido(contenido, relativo);
+
+        if (analisis.errores.length > 0 || analisis.sugerencias.length > 0) {
+          resultados.push({ archivo: relativo, ...analisis });
+        }
       }
     }
 
-    await enviarInformeProfesional(resultados, archivos.length);
+    await enviarInformeProfesional(resultados, totalArchivosEscaneados, repositorios.length);
   } catch (error) {
-    console.error('❌ Error crítico en auditoría:', error.message);
+    console.error('❌ Error:', error.message);
+    await bot.sendMessage(TELEGRAM_CHAT_ID, `❌ <b>Error:</b> No se pudo leer data.json`, {parse_mode: 'HTML'});
   }
 }
 
-async function enviarInformeProfesional(resultados, totalArchivos) {
-  const erroresTotales = resultados.reduce((acc, r) => acc + r.errores.length, 0);
-  const sugerenciasTotales = resultados.reduce((acc, r) => acc + r.sugerencias.length, 0);
-  
-  let header = `<b>📊 INFORME TÉCNICO DMR4 v2.0</b>\n`;
-  header += `<code>----------------------------</code>\n`;
-  header += `📂 Total archivos .js: <b>${totalArchivos}</b>\n`;
-  header += `❌ Errores críticos: <b>${erroresTotales}</b>\n`;
-  header += `💡 Sugerencias: <b>${sugerenciasTotales}</b>\n\n`;
+async function enviarInformeProfesional(resultados, totalFiles, totalRepos) {
+  const errores = resultados.reduce((acc, r) => acc + r.errores.length, 0);
+  const sugerencias = resultados.reduce((acc, r) => acc + r.sugerencias.length, 0);
 
-  let cuerpo = '';
-  // Ordenar por criticidad (lo más grave arriba)
+  let msg = `<b>📊 INFORME TÉCNICO DMR4 v3.0</b>\n`;
+  msg += `<code>----------------------------</code>\n`;
+  msg += `📁 Proyectos en data.json: <b>${totalRepos}</b>\n`;
+  msg += `📄 Total archivos .js: <b>${totalFiles}</b>\n`;
+  msg += `❌ Errores: <b>${errores}</b> | 💡 Sugerencias: <b>${sugerencias}</b>\n\n`;
+
   resultados.sort((a, b) => b.criticidad - a.criticidad);
+  const top = resultados.slice(0, 10); // Mostramos los 10 peores
 
-  // Mostrar solo los 8 más críticos para no saturar Telegram
-  const topResultados = resultados.slice(0, 8);
-
-  for (const res of topResultados) {
-    cuerpo += `<b>📄 ${escapeHtml(res.archivo)}</b>\n`;
-    res.errores.forEach(e => cuerpo += `${e}\n`);
-    res.sugerencias.forEach(s => cuerpo += `${s}\n`);
-    cuerpo += `\n`;
+  for (const res of top) {
+    msg += `<b>📄 ${escapeHtml(res.archivo)}</b>\n`;
+    res.errores.forEach(e => msg += `${e}\n`);
+    res.sugerencias.forEach(s => msg += `${s}\n`);
+    msg += `\n`;
   }
 
-  if (resultados.length > 8) {
-    cuerpo += `<i>...y ${resultados.length - 8} archivos más con detalles menores.</i>`;
-  }
+  if (resultados.length > 10) msg += `<i>...y ${resultados.length - 10} más.</i>`;
 
-  const mensajeFinal = header + cuerpo;
-  
-  // Dividir mensaje si es muy largo (límite Telegram 4096 caracteres)
-  const chunks = mensajeFinal.match(/[\s\S]{1,4000}(?=\n|$)/g) || [mensajeFinal];
-  
+  const chunks = msg.match(/[\s\S]{1,4000}(?=\n|$)/g) || [msg];
   for (const chunk of chunks) {
     await bot.sendMessage(TELEGRAM_CHAT_ID, chunk, { parse_mode: 'HTML' });
   }
-  
-  console.log('✅ Auditoría finalizada y enviada a Telegram.');
+  console.log('✅ Informe enviado.');
 }
 
-// Ejecución
 ejecutarAuditoria();
 
