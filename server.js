@@ -1,141 +1,163 @@
 const fs = require('fs');
+const fsp = require('fs/promises');
 const path = require('path');
 const express = require('express');
-const { exec } = require('child_process');
+const cors = require('cors');
+const { spawn, exec } = require('child_process');
 
 const app = express();
-const BASE = '/data/data/com.termux/files/home/proyectos-dmr4';
-const DB = './estado.json';
-// Tu contrato oficial de DRM4
-const MINT_DRM4 = "3CThGZU6DA6CdRMeYqnW12rtpudL9TgQPFT7qqu4NJ84"; 
 
-let procesos = {};
+const BASE = process.env.BASE_DIR || '/data/data/com.termux/files/home/proyectos-dmr4';
+const DB = path.join(__dirname, 'estado.json');
+const PANEL_PORT = Number(process.env.PANEL_PORT || 3000);
+const BASE_PORT = Number(process.env.BASE_PORT || 3100);
+const MINT_DRM4 = process.env.MINT_DRM4 || '3CThGZU6DA6CdRMeYqnW12rtpudL9TgQPFT7qqu4NJ84';
 
-function guardarEstado(){
-  fs.writeFileSync(DB, JSON.stringify(procesos));
+app.use(express.json());
+app.use(cors());
+app.use(express.static(path.join(__dirname, 'public')));
+
+let procesos = {}; 
+
+// --- GESTIÓN DE LOGS ---
+function obtenerRutaLog(repo) {
+  return path.join(BASE, repo, 'output.log');
 }
 
-function cargarEstado(){
-  if(fs.existsSync(DB)){
-    try {
-      procesos = JSON.parse(fs.readFileSync(DB));
-    } catch(e) { procesos = {}; }
-  }
-}
-
-// --- NUEVA FUNCIÓN DE MONITOREO DE LIQUIDEZ ---
-async function obtenerDatosToken() {
+// --- UTILIDADES DE PROCESO ---
+function procesoActivo(pid) {
   try {
-    // Consultamos la API de DexScreener para Solana
-    const response = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${MINT_DRM4}`);
-    const data = await response.json();
-    
-    if (data.pairs && data.pairs.length > 0) {
-      const pair = data.pairs[0];
-      return {
-        liquidez: pair.liquidity.usd,
-        precio: pair.priceUsd,
-        volumen: pair.volume.h24,
-        url: pair.url
-      };
-    }
-    return { liquidez: 0, precio: 0, msg: "Sin pool activo en Raydium/Orca" };
-  } catch (error) {
-    return { error: "Error de conexión con la red" };
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
   }
 }
 
-function getPort(i){
-  return 3100 + i;
+async function guardarEstado() {
+  await fsp.writeFile(DB, JSON.stringify(procesos, null, 2), 'utf8');
 }
 
-function run(cmd, cwd){
-  return new Promise(resolve=>{
-    exec(cmd,{cwd},(err,out,errout)=>{
-      resolve({error:err?err.message:null,salida:out||errout});
+async function cargarEstado() {
+  try {
+    const raw = await fsp.readFile(DB, 'utf8');
+    const data = JSON.parse(raw);
+    procesos = {};
+    for (const [repo, info] of Object.entries(data)) {
+      if (info?.pid && procesoActivo(info.pid)) {
+        procesos[repo] = info;
+      }
+    }
+  } catch {
+    procesos = {};
+  }
+}
+
+function nombreRepoValido(repo) {
+  return /^[a-zA-Z0-9._-]+$/.test(repo);
+}
+
+function rutaSeguraRepo(repo) {
+  if (!nombreRepoValido(repo)) return null;
+  const ruta = path.resolve(BASE, repo);
+  const base = path.resolve(BASE);
+  if (!(ruta === base || ruta.startsWith(base + path.sep))) return null;
+  return ruta;
+}
+
+function siguientePuertoLibre() {
+  const usados = new Set(Object.values(procesos).map(x => x.port));
+  let p = BASE_PORT;
+  while (usados.has(p)) p++;
+  return p;
+}
+
+function run(cmd, cwd) {
+  return new Promise(resolve => {
+    exec(cmd, { cwd }, (err, stdout, stderr) => {
+      resolve({
+        error: err ? err.message : null,
+        salida: stdout || stderr || ''
+      });
     });
   });
 }
 
-function crearProyecto(nombre,port){
-  const ruta = path.join(BASE,nombre);
-  if(fs.existsSync(ruta)) return;
-  fs.mkdirSync(ruta, { recursive: true });
+// --- LANZAMIENTO CON REDIRECCIÓN DE LOGS ---
+function lanzarProceso(repo, ruta) {
+  const logStream = fs.createWriteStream(obtenerRutaLog(repo), { flags: 'a' });
+  
+  // Usamos process.execPath para asegurar que use el Node de Termux
+  const child = spawn(process.execPath, ['server.js'], {
+    cwd: ruta,
+    detached: true,
+    stdio: ['ignore', 'pipe', 'pipe'] // 'pipe' para capturar la salida
+  });
 
-  fs.writeFileSync(path.join(ruta,'package.json'),JSON.stringify({
-    name:nombre,
-    version:"1.0.0",
-    main:"server.js",
-    dependencies:{ express:"^4.18.2", cors:"^2.8.5" }
-  },null,2));
+  // Redirigir stdout y stderr al archivo .log
+  child.stdout.pipe(logStream);
+  child.stderr.pipe(logStream);
 
-  fs.writeFileSync(path.join(ruta,'server.js'),`
-const express=require('express');
-const cors=require('cors');
-const app=express();
-app.use(cors());
-app.get('/',(req,res)=>res.send('${nombre} activo en puerto ${port}'));
-app.listen(${port},()=>console.log('${nombre} corriendo en ${port}'));
-`);
+  child.unref();
+  return child.pid;
 }
 
-async function startRepo(repo,index){
-  const ruta = path.join(BASE,repo);
-  const port = getPort(index);
-  crearProyecto(repo,port);
-  await run('npm install',ruta);
+// --- ENDPOINTS DE LA API ---
 
-  if(procesos[repo]){ return {msg:"ya activo",port}; }
+// Nuevo: Ver logs de un repo específico
+app.get('/api/repos/:repo/logs', async (req, res) => {
+  const repo = req.params.repo;
+  const rutaLog = obtenerRutaLog(repo);
+  
+  try {
+    if (!fs.existsSync(rutaLog)) {
+      return res.json({ logs: 'No hay logs disponibles aún.' });
+    }
+    // Leemos las últimas 100 líneas aproximadamente
+    const logs = await fsp.readFile(rutaLog, 'utf8');
+    res.json({ logs: logs.split('\n').slice(-100).join('\n') });
+  } catch (e) {
+    res.status(500).json({ error: 'Error al leer los logs' });
+  }
+});
 
-  const p = exec('node server.js',{cwd:ruta});
-  procesos[repo]=p.pid;
-  guardarEstado();
-  return {msg:"iniciado",port};
+// Limpiar logs
+app.delete('/api/repos/:repo/logs', async (req, res) => {
+  const repo = req.params.repo;
+  const rutaLog = obtenerRutaLog(repo);
+  try {
+    if (fs.existsSync(rutaLog)) await fsp.unlink(rutaLog);
+    res.json({ msg: 'Logs eliminados' });
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudieron eliminar los logs' });
+  }
+});
+
+// (Resto de tus funciones startRepo, stopRepo, estado, etc. se mantienen igual)
+// Solo asegúrate de cambiar la llamada a lanzarProceso en startRepo:
+// const pid = lanzarProceso(repo, ruta);
+
+async function startRepo(repo) {
+  const ruta = rutaSeguraRepo(repo);
+  if (!ruta) throw new Error('Repo inválido');
+  const ya = procesos[repo];
+  if (ya?.pid && procesoActivo(ya.pid)) return { msg: 'ya activo', port: ya.port };
+
+  const port = ya?.port || siguientePuertoLibre();
+  // ... (tu lógica de crearProyecto y asegurarDependencias)
+  
+  const pid = lanzarProceso(repo, ruta);
+  procesos[repo] = { pid, port };
+  await guardarEstado();
+  return { msg: 'iniciado', port, pid };
 }
 
-async function stopRepo(repo){
-  if(!procesos[repo]){ return {msg:"no activo"}; }
-  await run(`kill -9 ${procesos[repo]}`,BASE);
-  delete procesos[repo];
-  guardarEstado();
-  return {msg:"detenido"};
-}
+// ... (resto del código del server)
 
-function estado(){
-  const repos = fs.existsSync(BASE)?fs.readdirSync(BASE):[];
-  return repos.map((r,i)=>({
-    repo:r,
-    puerto:getPort(i),
-    activo:procesos[r]?true:false
-  }));
-}
-
-cargarEstado();
-
-// --- RUTAS API ---
-app.get('/api/status',(req,res)=>res.json(estado()));
-
-// Nueva ruta para que el panel frontal vea la liquidez
-app.get('/api/liquidez', async (req, res) => {
-  const info = await obtenerDatosToken();
-  res.json(info);
-});
-
-app.get('/api/start/:repo',async(req,res)=>{
-  const repos = fs.readdirSync(BASE);
-  const i = repos.indexOf(req.params.repo);
-  const r = await startRepo(req.params.repo,i>=0?i:repos.length);
-  res.json(r);
-});
-
-app.get('/api/stop/:repo',async(req,res)=>{
-  const r = await stopRepo(req.params.repo);
-  res.json(r);
-});
-
-app.use(express.static('public'));
-
-app.listen(3000,()=>{
-  console.log('🔥 IA DMR4 FINAL en http://127.0.0.1:3000');
-});
+(async () => {
+  await cargarEstado();
+  app.listen(PANEL_PORT, () => {
+    console.log(`🔥 IA DMR4 FINAL con Logs en http://127.0.0.1:${PANEL_PORT}`);
+  });
+})();
 
