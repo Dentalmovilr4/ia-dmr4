@@ -7,11 +7,11 @@ const { spawn, exec } = require('child_process');
 
 const app = express();
 
-const BASE = process.env.BASE_DIR || '/data/data/com.termux/files/home/proyectos-dmr4';
+// CORRECCIÓN DE RUTA: Ajustado a tu carpeta real en Termux
+const BASE = process.env.BASE_DIR || path.join(process.env.HOME, 'ia-dmr4'); 
 const DB = path.join(__dirname, 'estado.json');
-const PANEL_PORT = Number(process.env.PANEL_PORT || 3000);
-const BASE_PORT = Number(process.env.BASE_PORT || 3100);
-const MINT_DRM4 = process.env.MINT_DRM4 || '3CThGZU6DA6CdRMeYqnW12rtpudL9TgQPFT7qqu4NJ84';
+const PANEL_PORT = 3000;
+const BASE_PORT = 3100;
 
 app.use(express.json());
 app.use(cors());
@@ -41,11 +41,11 @@ async function guardarEstado() {
 async function cargarEstado() {
   try {
     const raw = await fsp.readFile(DB, 'utf8');
-    const data = JSON.parse(raw);
-    procesos = {};
-    for (const [repo, info] of Object.entries(data)) {
-      if (info?.pid && procesoActivo(info.pid)) {
-        procesos[repo] = info;
+    procesos = JSON.parse(raw);
+    // Limpiar procesos muertos al arrancar
+    for (const repo in procesos) {
+      if (!procesoActivo(procesos[repo].pid)) {
+        delete procesos[repo];
       }
     }
   } catch {
@@ -53,111 +53,61 @@ async function cargarEstado() {
   }
 }
 
-function nombreRepoValido(repo) {
-  return /^[a-zA-Z0-9._-]+$/.test(repo);
-}
+// --- ENDPOINTS ---
 
-function rutaSeguraRepo(repo) {
-  if (!nombreRepoValido(repo)) return null;
-  const ruta = path.resolve(BASE, repo);
-  const base = path.resolve(BASE);
-  if (!(ruta === base || ruta.startsWith(base + path.sep))) return null;
-  return ruta;
-}
+app.get('/api/status', (req, res) => {
+  res.json(procesos);
+});
 
-function siguientePuertoLibre() {
-  const usados = new Set(Object.values(procesos).map(x => x.port));
-  let p = BASE_PORT;
-  while (usados.has(p)) p++;
-  return p;
-}
+app.get('/api/liquidez', (req, res) => {
+  // Simulación de datos de Solana para el panel
+  res.json({ liquidez: 150.50, precio: "0.000045", activo: true });
+});
 
-function run(cmd, cwd) {
-  return new Promise(resolve => {
-    exec(cmd, { cwd }, (err, stdout, stderr) => {
-      resolve({
-        error: err ? err.message : null,
-        salida: stdout || stderr || ''
-      });
-    });
-  });
-}
-
-// --- LANZAMIENTO CON REDIRECCIÓN DE LOGS ---
+// Lanzamiento de procesos
 function lanzarProceso(repo, ruta) {
   const logStream = fs.createWriteStream(obtenerRutaLog(repo), { flags: 'a' });
-  
-  // Usamos process.execPath para asegurar que use el Node de Termux
-  const child = spawn(process.execPath, ['server.js'], {
+  const child = spawn('node', ['server.js'], {
     cwd: ruta,
     detached: true,
-    stdio: ['ignore', 'pipe', 'pipe'] // 'pipe' para capturar la salida
+    stdio: ['ignore', 'pipe', 'pipe']
   });
-
-  // Redirigir stdout y stderr al archivo .log
   child.stdout.pipe(logStream);
   child.stderr.pipe(logStream);
-
   child.unref();
   return child.pid;
 }
 
-// --- ENDPOINTS DE LA API ---
-
-// Nuevo: Ver logs de un repo específico
-app.get('/api/repos/:repo/logs', async (req, res) => {
+app.post('/api/start/:repo', async (req, res) => {
   const repo = req.params.repo;
-  const rutaLog = obtenerRutaLog(repo);
+  const ruta = path.join(BASE, repo);
   
-  try {
-    if (!fs.existsSync(rutaLog)) {
-      return res.json({ logs: 'No hay logs disponibles aún.' });
-    }
-    // Leemos las últimas 100 líneas aproximadamente
-    const logs = await fsp.readFile(rutaLog, 'utf8');
-    res.json({ logs: logs.split('\n').slice(-100).join('\n') });
-  } catch (e) {
-    res.status(500).json({ error: 'Error al leer los logs' });
-  }
-});
-
-// Limpiar logs
-app.delete('/api/repos/:repo/logs', async (req, res) => {
-  const repo = req.params.repo;
-  const rutaLog = obtenerRutaLog(repo);
-  try {
-    if (fs.existsSync(rutaLog)) await fsp.unlink(rutaLog);
-    res.json({ msg: 'Logs eliminados' });
-  } catch (e) {
-    res.status(500).json({ error: 'No se pudieron eliminar los logs' });
-  }
-});
-
-// (Resto de tus funciones startRepo, stopRepo, estado, etc. se mantienen igual)
-// Solo asegúrate de cambiar la llamada a lanzarProceso en startRepo:
-// const pid = lanzarProceso(repo, ruta);
-
-async function startRepo(repo) {
-  const ruta = rutaSeguraRepo(repo);
-  if (!ruta) throw new Error('Repo inválido');
-  const ya = procesos[repo];
-  if (ya?.pid && procesoActivo(ya.pid)) return { msg: 'ya activo', port: ya.port };
-
-  const port = ya?.port || siguientePuertoLibre();
-  // ... (tu lógica de crearProyecto y asegurarDependencias)
+  if (!fs.existsSync(ruta)) return res.status(404).json({error: "Repo no existe"});
   
   const pid = lanzarProceso(repo, ruta);
-  procesos[repo] = { pid, port };
+  procesos[repo] = { pid, port: BASE_PORT + Object.keys(procesos).length };
   await guardarEstado();
-  return { msg: 'iniciado', port, pid };
-}
+  res.json({msg: "Iniciado", pid: pid});
+});
 
-// ... (resto del código del server)
+app.post('/api/stop/:repo', async (req, res) => {
+    const repo = req.params.repo;
+    if (procesos[repo]) {
+        try { process.kill(procesos[repo].pid); } catch(e) {}
+        delete procesos[repo];
+        await guardarEstado();
+    }
+    res.json({msg: "Detenido"});
+});
 
+// --- ARRANCAR SERVIDOR ---
 (async () => {
   await cargarEstado();
-  app.listen(PANEL_PORT, () => {
-    console.log(`🔥 IA DMR4 FINAL con Logs en http://127.0.0.1:${PANEL_PORT}`);
+  // ESCUCHAR EN 0.0.0.0 PARA EVITAR BLOQUEOS EN EL MÓVIL
+  app.listen(PANEL_PORT, '0.0.0.0', () => {
+    console.log(`\n🔥 IA DMR4 FINAL ONLINE`);
+    console.log(`🌐 Panel: http://localhost:${PANEL_PORT}`);
+    console.log(`📂 Ruta Base: ${BASE}\n`);
   });
 })();
 

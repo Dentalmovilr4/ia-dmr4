@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IA DMR4 FINAL</title>
+    <title>IA DMR4 FINAL - PANEL</title>
     <style>
         body { background: #0a0a0a; color: #0f0; text-align: center; font-family: 'Courier New', Courier, monospace; margin: 0; padding: 20px; }
         .container { max-width: 600px; margin: auto; border: 1px solid #0f0; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px #0f0; }
@@ -17,6 +17,7 @@
         .status { font-weight: bold; margin-top: 10px; }
         h1 { font-size: 1.5rem; text-shadow: 0 0 5px #0f0; }
         .liquidez-val { color: #00bcff; font-size: 1.2rem; }
+        .logs-box { background: #000; color: #aaa; font-size: 0.7rem; text-align: left; padding: 10px; height: 100px; overflow-y: auto; margin-top: 10px; border: 1px solid #333; }
     </style>
 </head>
 <body>
@@ -35,13 +36,15 @@
 </div>
 
 <script>
-// Función para cargar la Liquidez desde la nueva API de tu server.js
+// Usamos la URL completa para evitar errores de conexión en el móvil
+const API_BASE = "http://127.0.0.1:3000";
+
 async function updateLiquidez() {
     try {
-        const res = await fetch('/api/liquidez');
+        const res = await fetch(`${API_BASE}/api/liquidez`);
         const data = await res.json();
         const div = document.getElementById('liquidez-info');
-        
+
         if(data.error) {
             div.innerHTML = `<span style="color:orange">⚠️ Conectando con red...</span>`;
         } else if(data.liquidez > 0) {
@@ -57,25 +60,29 @@ async function updateLiquidez() {
             `;
         }
     } catch(e) {
-        console.log("Error en liquidez");
+        document.getElementById('liquidez-info').innerHTML = `<span style="color:red">🔴 Error de Servidor</span>`;
     }
 }
 
-// Función para cargar los procesos del servidor
 async function load(){
   try {
-      const r = await fetch('/api/status');
+      const r = await fetch(`${API_BASE}/api/status`);
       const d = await r.json();
       let h='';
 
-      d.forEach(x=>{
+      // d ahora debe venir como un objeto con los repos o un array
+      // Ajustamos según la estructura que maneja tu server.js
+      Object.keys(d).forEach(name => {
+        const x = d[name];
         h+=`
         <div class="repo-card">
-          <h3>${x.repo.toUpperCase()}</h3>
-          <p style="font-size: 0.8rem; color: #888;">Puerto: ${x.puerto}</p>
-          <button class="on" onclick="start('${x.repo}')">START</button>
-          <button class="off" onclick="stop('${x.repo}')">STOP</button>
-          <div class="status">${x.activo ? '🟢 ACTIVO' : '🔴 APAGADO'}</div>
+          <h3>${name.toUpperCase()}</h3>
+          <p style="font-size: 0.8rem; color: #888;">Puerto: ${x.port || 'N/A'}</p>
+          <button class="on" onclick="start('${name}')">START</button>
+          <button class="off" onclick="stop('${name}')">STOP</button>
+          <button style="background:#444; color:#fff" onclick="viewLogs('${name}')">LOGS</button>
+          <div class="status">${x.pid ? '🟢 ACTIVO' : '🔴 APAGADO'}</div>
+          <div id="logs-${name}" class="logs-box" style="display:none"></div>
         </div>`;
       });
 
@@ -85,12 +92,28 @@ async function load(){
   }
 }
 
-async function start(r){ await fetch('/api/start/'+r); load(); }
-async function stop(r){ await fetch('/api/stop/'+r); load(); }
+async function start(r){ await fetch(`${API_BASE}/api/start/${r}`, {method: 'POST'}); load(); }
+async function stop(r){ await fetch(`${API_BASE}/api/stop/${r}`, {method: 'POST'}); load(); }
+
+async function viewLogs(r){
+    const div = document.getElementById(`logs-${r}`);
+    if(div.style.display === 'block') {
+        div.style.display = 'none';
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/api/repos/${r}/logs`);
+        const data = await res.json();
+        div.innerHTML = `<pre>${data.logs || 'Sin registros'}</pre>`;
+        div.style.display = 'block';
+    } catch(e) {
+        alert("No se pudieron cargar los logs");
+    }
+}
 
 // Intervalos de actualización
-setInterval(load, 3000); // Repos cada 3 segundos
-setInterval(updateLiquidez, 10000); // Liquidez cada 10 segundos
+setInterval(load, 5000); 
+setInterval(updateLiquidez, 15000);
 
 load();
 updateLiquidez();
