@@ -18,6 +18,8 @@
         h1 { font-size: 1.5rem; text-shadow: 0 0 5px #0f0; }
         .liquidez-val { color: #00bcff; font-size: 1.2rem; }
         .logs-box { background: #000; color: #aaa; font-size: 0.7rem; text-align: left; padding: 10px; height: 100px; overflow-y: auto; margin-top: 10px; border: 1px solid #333; }
+        .qr-section { margin-top: 15px; padding: 10px; border-top: 1px dashed #00bcff; }
+        .qr-img { width: 160px; border: 2px solid #00bcff; border-radius: 10px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -28,15 +30,21 @@
     <div class="token-card">
         <h3>🪙 DRM4 COIN STATUS</h3>
         <div id="liquidez-info">Cargando datos de Solana...</div>
+        
+        <div class="qr-section">
+            <img src="qr_dmr4.png" alt="QR RECARGA" class="qr-img">
+            <p style="font-size: 0.7rem; color: #00bcff;">ESCANE DEPOSITO SOLANA</p>
+            <div style="font-size: 0.6rem; color: #888; word-break: break-all; background: #000; padding: 5px;">
+                3CThGZU6DA6CdRMeYqnW12rtpudL9TgQPFT7qqu4NJ84
+            </div>
+        </div>
     </div>
 
     <hr style="border: 0.5px solid #333;">
-
     <div id="repos"></div>
 </div>
 
 <script>
-// Usamos la URL completa para evitar errores de conexión en el móvil
 const API_BASE = "http://127.0.0.1:3000";
 
 async function updateLiquidez() {
@@ -44,7 +52,6 @@ async function updateLiquidez() {
         const res = await fetch(`${API_BASE}/api/liquidez`);
         const data = await res.json();
         const div = document.getElementById('liquidez-info');
-
         if(data.error) {
             div.innerHTML = `<span style="color:orange">⚠️ Conectando con red...</span>`;
         } else if(data.liquidez > 0) {
@@ -69,9 +76,6 @@ async function load(){
       const r = await fetch(`${API_BASE}/api/status`);
       const d = await r.json();
       let h='';
-
-      // d ahora debe venir como un objeto con los repos o un array
-      // Ajustamos según la estructura que maneja tu server.js
       Object.keys(d).forEach(name => {
         const x = d[name];
         h+=`
@@ -85,7 +89,6 @@ async function load(){
           <div id="logs-${name}" class="logs-box" style="display:none"></div>
         </div>`;
       });
-
       document.getElementById('repos').innerHTML = h;
   } catch(e) {
       document.getElementById('repos').innerHTML = '<p style="color:red">Error conectando con el servidor...</p>';
@@ -111,14 +114,10 @@ async function viewLogs(r){
     }
 }
 
-// Intervalos de actualización
 setInterval(load, 5000); 
 setInterval(updateLiquidez, 15000);
-
 load();
 updateLiquidez();
 </script>
-
 </body>
 </html>
-
