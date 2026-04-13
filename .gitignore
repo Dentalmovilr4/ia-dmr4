@@ -3,4 +3,5 @@ node_modules/
 supabaseClient.js
 estado.json
 *.log
+data/*.csv
 
