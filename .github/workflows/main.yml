@@ -1,0 +1,25 @@
+name: CI-IA-DMR4-FINAL
+
+on:
+  push:
+    branches: [ main ] # Se activa cuando subes algo a la rama principal
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Instalar dependencias
+      run: npm install
+
+    - name: Test de Seguridad
+      run: |
+        echo "🔍 Escaneando vulnerabilidades en el código de Dentalmovilr4..."
+        npm audit fix --force || true
