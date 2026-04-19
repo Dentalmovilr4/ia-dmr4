@@ -23,3 +23,17 @@ jobs:
       run: |
         echo "🔍 Escaneando vulnerabilidades en el código de Dentalmovilr4..."
         npm audit fix --force || true
+    - name: Enviar notificación a Telegram
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: |
+          🚀 ¡IA-DMR4 Actualizada!
+          
+          El repositorio de Dentalmovilr4 ha sido sincronizado con éxito.
+          Estado: ✅ Build Finalizado.
+          Rama: ${{ github.ref_name }}
+          
+          El sistema está listo en Termux.
+
