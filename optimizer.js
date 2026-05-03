@@ -4,23 +4,32 @@ const path = require('path');
 const DB = path.join(__dirname, 'optimizer.json');
 
 let memoria = {};
+let dirty = false;
 
 // ----------------------
 // CARGAR
 // ----------------------
 async function cargar() {
   try {
-    memoria = JSON.parse(await fs.readFile(DB, 'utf8'));
+    const raw = await fs.readFile(DB, 'utf8');
+    memoria = JSON.parse(raw);
   } catch {
     memoria = {};
   }
 }
 
 // ----------------------
-// GUARDAR
+// GUARDAR (SEGURA)
 // ----------------------
 async function guardar() {
-  await fs.writeFile(DB, JSON.stringify(memoria, null, 2));
+  if (!dirty) return;
+
+  const tmp = DB + '.tmp';
+
+  await fs.writeFile(tmp, JSON.stringify(memoria, null, 2));
+  await fs.rename(tmp, DB);
+
+  dirty = false;
 }
 
 // ----------------------
@@ -31,18 +40,51 @@ async function registrar(repo, tipo, valor = 1) {
     memoria[repo] = {
       exito: 0,
       fallo: 0,
-      score: 0
+      score: 0,
+      lastUpdate: Date.now()
     };
   }
 
-  memoria[repo][tipo] += valor;
-
-  // 🧠 FÓRMULA DE SCORE
   const r = memoria[repo];
-  r.score = (r.exito * 2) - (r.fallo * 3);
 
-  await guardar();
+  // ----------------------
+  // DECAY (envejecimiento)
+  // ----------------------
+  const ahora = Date.now();
+  const horas = (ahora - r.lastUpdate) / 3600000;
+
+  if (horas > 1) {
+    r.exito *= 0.9;
+    r.fallo *= 0.9;
+  }
+
+  r.lastUpdate = ahora;
+
+  // ----------------------
+  // REGISTRO
+  // ----------------------
+  if (tipo === 'exito') r.exito += valor;
+  if (tipo === 'fallo') r.fallo += valor;
+
+  // ----------------------
+  // SCORE INTELIGENTE
+  // ----------------------
+  const estabilidad = r.exito / (r.exito + r.fallo + 1);
+
+  r.score =
+    (r.exito * 1.5) -
+    (r.fallo * 2.5) +
+    (estabilidad * 5);
+
+  dirty = true;
 }
+
+// ----------------------
+// AUTO-GUARDADO
+// ----------------------
+setInterval(() => {
+  guardar().catch(() => {});
+}, 10000);
 
 // ----------------------
 // OBTENER SCORE
@@ -59,9 +101,17 @@ function ranking() {
     .sort((a, b) => b[1].score - a[1].score);
 }
 
+// ----------------------
+// DEBUG (opcional)
+// ----------------------
+function debug() {
+  return memoria;
+}
+
 module.exports = {
   cargar,
   registrar,
   getScore,
-  ranking
+  ranking,
+  debug
 };
