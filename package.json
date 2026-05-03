@@ -1,24 +1,33 @@
 {
   "name": "ia-dmr4",
-  "version": "1.1.0",
-  "description": "Sistema inteligente de gestión de procesos autónomos (IA-DMR4)",
+  "version": "1.2.0",
+  "description": "Sistema inteligente autónomo DMR4 (IA + Optimización + Autopilot)",
   "main": "server.js",
   "type": "commonjs",
 
   "scripts": {
     "start": "node server.js",
+    "brain": "node main.js",
     "dev": "nodemon server.js",
-    "restart": "pkill -f server.js && node server.js",
-    "logs": "tail -f estado.json",
-    "clean": "rm -f estado.json estado.json.bak estado.json.tmp"
+    "dev:brain": "nodemon main.js",
+
+    "restart": "node scripts/restart.js",
+
+    "audit": "node index.js",
+    "diagnostic": "node ia-diagnostico.js",
+
+    "test:run": "node -c server.js && node -c brain.js",
+    
+    "logs": "tail -f *.log",
+    "clean": "rm -f estado.json *.log"
   },
 
   "keywords": [
-    "process-manager",
+    "dmr4",
     "automation",
     "ai",
-    "bot-manager",
-    "dmr4"
+    "autopilot",
+    "process-manager"
   ],
 
   "author": "Dentalmovilr4",
