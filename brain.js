@@ -10,35 +10,48 @@ const fs = require('fs/promises');
 const path = require('path');
 
 const DATA_FILE = path.join(__dirname, 'data.json');
-
 const INTERVALO = 30000;
-
-// ----------------------
-// ESTADO GLOBAL
-// ----------------------
 
 let estadoGlobal = {
   estrategia: 'CONSERVADOR',
   mercado: {},
-  ultimaDecision: null
+  ultimaDecision: null,
+  lock: false
 };
 
 // ----------------------
-// CARGAR REPOS
+// CARGAR REPOS (NORMALIZADO)
 // ----------------------
-
 async function cargarRepos() {
-  const raw = await fs.readFile(DATA_FILE, 'utf8');
-  return JSON.parse(raw);
+  try {
+    const raw = await fs.readFile(DATA_FILE, 'utf8');
+    const data = JSON.parse(raw);
+
+    // 🔥 Normalizar estructura
+    return data.map(r => {
+      if (typeof r === 'string') {
+        return {
+          name: r,
+          prioridad: 5,
+          critico: false,
+          autoRestart: true,
+          tipo: 'general'
+        };
+      }
+      return r;
+    });
+
+  } catch {
+    await alerta('error', 'Error cargando data.json');
+    return [];
+  }
 }
 
 // ----------------------
-// OBSERVAR SISTEMA
+// OBSERVAR
 // ----------------------
-
 async function observar() {
   const mercado = await obtenerDatosToken();
-
   estadoGlobal.mercado = mercado;
 
   return {
@@ -48,109 +61,112 @@ async function observar() {
 }
 
 // ----------------------
-// DECIDIR
+// EJECUTAR
 // ----------------------
-
-async function decidir(contexto) {
-  const estrategia = await decidirEstrategia();
-
-  estadoGlobal.estrategia = estrategia;
-
-  return estrategia;
-}
-
-// ----------------------
-// EJECUTAR DECISIONES
-// ----------------------
-
 async function ejecutar(repos, estrategia) {
   for (const repo of repos) {
+
     const procesos = manager.getProcesos();
     const activo = procesos[repo.name];
-
     const aprendizaje = await learning.evaluar(repo.name);
 
-    // 🔥 BLOQUEO POR APRENDIZAJE
+    // 🛡️ BLOQUEO
     if (aprendizaje === 'INESTABLE') {
       if (activo) {
         await manager.detener(repo.name);
-        await alerta('error', `${repo.name} bloqueado por IA (inestable)`);
+        await alerta('error', `🛡️ ${repo.name} bloqueado por inestabilidad`);
       }
       continue;
     }
 
-    // 🔥 ESTRATEGIAS
+    try {
+      switch (estrategia) {
 
-    if (estrategia === 'DEFENSIVO') {
-      if (!repo.critico && activo) {
-        await manager.detener(repo.name);
-        await logSistema(`${repo.name} detenido (modo defensivo)`);
-      }
-      continue;
-    }
+        case 'DEFENSIVO':
+          if (!repo.critico && activo) {
+            await manager.detener(repo.name);
+          }
+          break;
 
-    if (estrategia === 'CONSERVADOR') {
-      if (repo.prioridad >= 5 && !activo) {
-        await manager.iniciar(repo.name);
-        await learning.registrar(repo.name, 'exito');
-      }
-      continue;
-    }
+        case 'CONSERVADOR':
+          if (repo.prioridad >= 5 && !activo) {
+            await manager.iniciar(repo.name);
+            await learning.registrar(repo.name, 'exito');
+          }
+          break;
 
-    if (estrategia === 'AGRESIVO') {
-      if (!activo) {
-        await manager.iniciar(repo.name);
-        await learning.registrar(repo.name, 'exito');
-      }
-      continue;
-    }
+        case 'AGRESIVO':
+          if (!activo) {
+            await manager.iniciar(repo.name);
+            await learning.registrar(repo.name, 'exito');
+          }
+          break;
 
-    if (estrategia === 'EXPANSIVO') {
-      if (!activo && repo.autoRestart) {
-        await manager.iniciar(repo.name);
-        await learning.registrar(repo.name, 'exito');
+        case 'EXPANSIVO':
+          if (!activo && repo.autoRestart) {
+            await manager.iniciar(repo.name);
+            await learning.registrar(repo.name, 'exito');
+          }
+          break;
       }
+
+    } catch (err) {
+      await learning.registrar(repo.name, 'fallo');
+      await alerta('error', `❌ Error en ${repo.name}: ${err.message}`);
     }
   }
 }
 
 // ----------------------
-// CICLO PRINCIPAL
+// CICLO
 // ----------------------
-
 async function ciclo() {
+
+  if (estadoGlobal.lock) {
+    console.log("⏳ Ciclo en ejecución, saltando...");
+    return;
+  }
+
+  estadoGlobal.lock = true;
+
   try {
     const repos = await cargarRepos();
-
     const contexto = await observar();
 
-    const estrategia = await decidir(contexto);
+    const nuevaEstrategia = await decidirEstrategia(contexto);
 
-    await ejecutar(repos, estrategia);
+    // 🧠 Anti-flapping (cambio controlado)
+    if (estadoGlobal.estrategia !== nuevaEstrategia) {
+      console.log(`🔄 Cambio estrategia: ${estadoGlobal.estrategia} → ${nuevaEstrategia}`);
+      await logSistema(`Cambio de estrategia: ${nuevaEstrategia}`);
+    }
 
+    await ejecutar(repos, nuevaEstrategia);
+
+    estadoGlobal.estrategia = nuevaEstrategia;
     estadoGlobal.ultimaDecision = Date.now();
 
-    console.log(`🧠 Estrategia actual: ${estrategia}`);
+    console.log(`🤖 [${nuevaEstrategia}] ciclo OK`);
 
   } catch (err) {
-    console.error("❌ Error en cerebro:", err.message);
-    await alerta('error', 'Fallo crítico en brain');
+    console.error("❌ Error ciclo:", err.message);
+    await alerta('error', 'Fallo en núcleo IA');
   }
+
+  estadoGlobal.lock = false;
 }
 
 // ----------------------
 // START
 // ----------------------
-
 async function iniciarCerebro() {
-  console.log("🧠 CEREBRO DMR4 ONLINE");
+  console.log("🧠 DMR4 PRO ONLINE");
 
   await manager.inicializar();
 
   setInterval(ciclo, INTERVALO);
+  await ciclo();
 }
-
-// ----------------------
 
 module.exports = {
   iniciarCerebro,
