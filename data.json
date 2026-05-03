@@ -1,11 +1,65 @@
 [
-  "Quimica-Organica-DMR4",
-  "dmr4-token-web",
-  "Agro-Tech-Dmr4-IA",
-  "MotoTech-DMR4",
-  "MotoTech-AI",
-  "Vigilante-Red",
-  "Dmr4-Control-Center",
-  "DMR4-Riego-Inteligente-FINAL",
-  "DMR4-Quantum-Assets"
+  {
+    "name": "Quimica-Organica-DMR4",
+    "tipo": "educacion",
+    "prioridad": 1,
+    "autoRestart": true,
+    "critico": false
+  },
+  {
+    "name": "dmr4-token-web",
+    "tipo": "finanzas",
+    "prioridad": 5,
+    "autoRestart": true,
+    "critico": true
+  },
+  {
+    "name": "Agro-Tech-Dmr4-IA",
+    "tipo": "iot",
+    "prioridad": 3,
+    "autoRestart": true,
+    "critico": false
+  },
+  {
+    "name": "MotoTech-DMR4",
+    "tipo": "iot",
+    "prioridad": 2,
+    "autoRestart": false,
+    "critico": false
+  },
+  {
+    "name": "MotoTech-AI",
+    "tipo": "ia",
+    "prioridad": 4,
+    "autoRestart": true,
+    "critico": true
+  },
+  {
+    "name": "Vigilante-Red",
+    "tipo": "seguridad",
+    "prioridad": 5,
+    "autoRestart": true,
+    "critico": true
+  },
+  {
+    "name": "Dmr4-Control-Center",
+    "tipo": "core",
+    "prioridad": 10,
+    "autoRestart": true,
+    "critico": true
+  },
+  {
+    "name": "DMR4-Riego-Inteligente-FINAL",
+    "tipo": "iot",
+    "prioridad": 3,
+    "autoRestart": true,
+    "critico": false
+  },
+  {
+    "name": "DMR4-Quantum-Assets",
+    "tipo": "finanzas",
+    "prioridad": 6,
+    "autoRestart": true,
+    "critico": true
+  }
 ]
