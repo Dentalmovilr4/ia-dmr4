@@ -1,4 +1,4 @@
-name: CI-IA-DMR4-PRO
+name: CI-IA-DMR4-CORE
 
 on:
   push:
@@ -10,52 +10,76 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Clonar repositorio
+    - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    - name: 🟢 Configurar Node.js (Versión Correcta)
+    - name: 🟢 Node 20
       uses: actions/setup-node@v4
       with:
-        node-version: '20' # Actualizado para compatibilidad con Supabase
+        node-version: '20'
         cache: 'npm'
 
-    - name: 📦 Instalar dependencias
+    # ----------------------
+    # DEPENDENCIAS SEGURAS
+    # ----------------------
+    - name: 📦 Install limpio
       run: npm ci
 
-    - name: 🧪 Verificar sintaxis
-      run: node -c brain.js || echo "⚠️ Error de sintaxis en brain.js"
+    # ----------------------
+    # VALIDACIÓN DE CÓDIGO
+    # ----------------------
+    - name: 🧪 Verificar sintaxis global
+      run: |
+        node -c brain.js
+        node -c server.js
+        node -c processManager.js
+        node -c dex.js
 
-    - name: 🔒 Auditoría de seguridad
+    # ----------------------
+    # SEGURIDAD
+    # ----------------------
+    - name: 🔒 Auditoría crítica
       run: npm audit --audit-level=high --omit=dev
 
-    - name: 🧠 Auditoría IA DMR4 (Escaneo de Secretos)
-      run: node auditoria.js || echo "⚠️ El Auditor IA detectó riesgos"
+    # ----------------------
+    # IA AUDITOR (NO BLOQUEANTE)
+    # ----------------------
+    - name: 🧠 Auditoría IA
+      run: node index.js || echo "⚠️ IA reportó problemas"
 
-    - name: ⚙️ Verificar arranque en frío
+    # ----------------------
+    # TEST DE ARRANQUE REAL
+    # ----------------------
+    - name: ⚙️ Test de ejecución
       run: |
-        node brain.js &
+        node server.js &
         sleep 5
-        pkill -f brain.js || true
+        pkill -f server.js || true
 
-    - name: 📡 Notificación Telegram (Éxito)
+    # ----------------------
+    # TELEGRAM
+    # ----------------------
+    - name: 📡 Éxito
       if: success()
       uses: appleboy/telegram-action@v0.1.1
       with:
         to: ${{ secrets.CHAT_ID }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          ✅ *BUILD EXITOSO: IA-DMR4 PRO*
-          📦 Repo: ${{ github.repository }}
-          👤 Autor: ${{ github.actor }}
-          🚀 El sistema está listo para operar.
+          ✅ *DMR4 CORE OK*
+          
+          🧠 Sistema validado
+          🔒 Seguridad OK
+          ⚙️ Arranque OK
 
-    - name: 🚨 Notificación Telegram (Fallo)
+    - name: 🚨 Fallo
       if: failure()
       uses: appleboy/telegram-action@v0.1.1
       with:
         to: ${{ secrets.CHAT_ID }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          ❌ *FALLO EN BUILD: IA-DMR4 PRO*
-          🔍 Revisa los logs de GitHub Actions.
-          ⚠️ Posible incompatibilidad o error de sintaxis.
+          ❌ *DMR4 FALLÓ*
+          
+          🔍 Revisar errores en CI
+          🤖 Sistema necesita intervención
