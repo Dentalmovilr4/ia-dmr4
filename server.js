@@ -1,3 +1,9 @@
+/**
+ * IA-DMR4 PRO SERVER - Versión limpia y robusta
+ */
+
+require('dotenv').config();
+
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
@@ -7,7 +13,10 @@ const { spawn } = require('child_process');
 
 const app = express();
 
+// =========================
 // CONFIG
+// =========================
+
 const BASE = process.env.BASE_DIR || path.join(process.env.HOME, 'ia-dmr4');
 const DB = path.join(__dirname, 'estado.json');
 const PANEL_PORT = 3000;
@@ -19,9 +28,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 let procesos = {};
 
-// -------------------------
+// =========================
 // UTILIDADES
-// -------------------------
+// =========================
 
 function rutaSegura(repo) {
   if (!/^[a-zA-Z0-9._-]+$/.test(repo)) return null;
@@ -50,9 +59,9 @@ function obtenerRutaLog(repo) {
   return path.join(BASE, repo, 'output.log');
 }
 
-// -------------------------
-// STORAGE INTELIGENTE
-// -------------------------
+// =========================
+// STORAGE SEGURO
+// =========================
 
 async function guardarEstado() {
   const tmp = DB + '.tmp';
@@ -86,10 +95,9 @@ async function cargarEstado() {
     }
   }
 
-  // LIMPIEZA AUTOMÁTICA (decisión inteligente)
   for (const repo in procesos) {
     if (!procesoActivo(procesos[repo].pid)) {
-      console.log(`🧹 Proceso muerto eliminado: ${repo}`);
+      console.log(`🧹 Eliminando proceso muerto: ${repo}`);
       delete procesos[repo];
     }
   }
@@ -97,9 +105,9 @@ async function cargarEstado() {
   await guardarEstado();
 }
 
-// -------------------------
+// =========================
 // PROCESOS
-// -------------------------
+// =========================
 
 function lanzarProceso(repo, ruta, port) {
   const logPath = obtenerRutaLog(repo);
@@ -120,19 +128,21 @@ function lanzarProceso(repo, ruta, port) {
   return child.pid;
 }
 
-// -------------------------
+// =========================
 // API
-// -------------------------
+// =========================
 
 app.get('/api/status', (req, res) => {
   res.json(procesos);
 });
 
 app.get('/api/logs/:repo', async (req, res) => {
-  const ruta = rutaSegura(req.params.repo);
+  const repo = req.params.repo;
+  const ruta = rutaSegura(repo);
+
   if (!ruta) return res.status(400).json({ error: 'Ruta inválida' });
 
-  const logPath = obtenerRutaLog(req.params.repo);
+  const logPath = obtenerRutaLog(repo);
 
   try {
     const data = await fsp.readFile(logPath, 'utf8');
@@ -150,7 +160,6 @@ app.post('/api/start/:repo', async (req, res) => {
     return res.status(404).json({ error: 'Repo no existe' });
   }
 
-  // DECISIÓN: evitar duplicados
   if (procesos[repo] && procesoActivo(procesos[repo].pid)) {
     return res.json({ msg: 'Ya está corriendo', pid: procesos[repo].pid });
   }
@@ -180,9 +189,9 @@ app.post('/api/stop/:repo', async (req, res) => {
   res.json({ msg: 'Detenido' });
 });
 
-// -------------------------
-// AUTO-RESTART (INTELIGENCIA)
-// -------------------------
+// =========================
+// AUTO-RESTART INTELIGENTE
+// =========================
 
 setInterval(async () => {
   for (const repo in procesos) {
@@ -201,15 +210,15 @@ setInterval(async () => {
   }
 }, 10000);
 
-// -------------------------
-// START SERVER
-// -------------------------
+// =========================
+// START
+// =========================
 
 (async () => {
   await cargarEstado();
 
   app.listen(PANEL_PORT, '0.0.0.0', () => {
-    console.log(`\n🔥 IA-DMR4 PRO ONLINE`);
+    console.log('\n🔥 IA-DMR4 PRO ONLINE');
     console.log(`🌐 Panel: http://localhost:${PANEL_PORT}`);
     console.log(`📂 Base: ${BASE}\n`);
   });
