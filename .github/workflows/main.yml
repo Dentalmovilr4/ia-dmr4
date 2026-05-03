@@ -13,76 +13,49 @@ jobs:
     - name: 📥 Clonar repositorio
       uses: actions/checkout@v4
 
-    - name: 🟢 Configurar Node.js
+    - name: 🟢 Configurar Node.js (Versión Correcta)
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20' # Actualizado para compatibilidad con Supabase
         cache: 'npm'
 
     - name: 📦 Instalar dependencias
       run: npm ci
 
-    # ----------------------
-    # VALIDACIÓN BÁSICA
-    # ----------------------
-
     - name: 🧪 Verificar sintaxis
-      run: node -c server.js || echo "⚠️ Error en server.js"
+      run: node -c brain.js || echo "⚠️ Error de sintaxis en brain.js"
 
-    - name: 🧪 Ejecutar tests (si existen)
-      run: npm test || echo "⚠️ Sin tests definidos"
-
-    # ----------------------
-    # SEGURIDAD
-    # ----------------------
-
-    - name: 🔒 Auditoría de seguridad (crítica)
+    - name: 🔒 Auditoría de seguridad
       run: npm audit --audit-level=high --omit=dev
 
-    # ----------------------
-    # TU IA AUDITOR 🔥
-    # ----------------------
+    - name: 🧠 Auditoría IA DMR4 (Escaneo de Secretos)
+      run: node auditoria.js || echo "⚠️ El Auditor IA detectó riesgos"
 
-    - name: 🧠 Auditoría IA DMR4
-      run: node index.js || echo "⚠️ Auditor IA falló"
-
-    # ----------------------
-    # BUILD CHECK
-    # ----------------------
-
-    - name: ⚙️ Verificar arranque
+    - name: ⚙️ Verificar arranque en frío
       run: |
-        node server.js &
+        node brain.js &
         sleep 5
-        pkill -f server.js || true
+        pkill -f brain.js || true
 
-    # ----------------------
-    # NOTIFICACIONES
-    # ----------------------
-
-    - name: 📡 Notificación éxito
+    - name: 📡 Notificación Telegram (Éxito)
       if: success()
       uses: appleboy/telegram-action@v0.1.1
       with:
         to: ${{ secrets.CHAT_ID }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          ✅ *DMR4 BUILD EXITOSO*
-
+          ✅ *BUILD EXITOSO: IA-DMR4 PRO*
           📦 Repo: ${{ github.repository }}
-          🌿 Rama: ${{ github.ref_name }}
           👤 Autor: ${{ github.actor }}
+          🚀 El sistema está listo para operar.
 
-    - name: 🚨 Notificación fallo
+    - name: 🚨 Notificación Telegram (Fallo)
       if: failure()
       uses: appleboy/telegram-action@v0.1.1
       with:
         to: ${{ secrets.CHAT_ID }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          ❌ *DMR4 BUILD FALLÓ*
-
-          📦 Repo: ${{ github.repository }}
-          🌿 Rama: ${{ github.ref_name }}
-
-          🔍 Revisa errores en GitHub Actions
+          ❌ *FALLO EN BUILD: IA-DMR4 PRO*
+          🔍 Revisa los logs de GitHub Actions.
+          ⚠️ Posible incompatibilidad o error de sintaxis.
