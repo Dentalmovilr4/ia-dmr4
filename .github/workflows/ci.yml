@@ -1,0 +1,9 @@
+- name: 🟢 Configurar Node.js (v20)
+  uses: actions/setup-node@v4
+  with:
+    node-version: '20' # Actualizado para compatibilidad con Supabase
+    cache: 'npm'
+
+- name: 📦 Instalar dependencias
+  # Se cambia 'npm ci' por 'install' con flags para resolver la desincronización
+  run: npm install --legacy-peer-deps 
