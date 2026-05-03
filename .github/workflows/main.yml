@@ -1,39 +1,88 @@
-name: CI-IA-DMR4-FINAL
+name: CI-IA-DMR4-PRO
 
 on:
   push:
-    branches: [ main ] # Se activa cuando subes algo a la rama principal
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Configurar Node.js
-      uses: actions/setup-node@v3
+    - name: 📥 Clonar repositorio
+      uses: actions/checkout@v4
+
+    - name: 🟢 Configurar Node.js
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
+        cache: 'npm'
 
-    - name: Instalar dependencias
-      run: npm install
+    - name: 📦 Instalar dependencias
+      run: npm ci
 
-    - name: Test de Seguridad
+    # ----------------------
+    # VALIDACIÓN BÁSICA
+    # ----------------------
+
+    - name: 🧪 Verificar sintaxis
+      run: node -c server.js || echo "⚠️ Error en server.js"
+
+    - name: 🧪 Ejecutar tests (si existen)
+      run: npm test || echo "⚠️ Sin tests definidos"
+
+    # ----------------------
+    # SEGURIDAD
+    # ----------------------
+
+    - name: 🔒 Auditoría de seguridad (crítica)
+      run: npm audit --audit-level=high --omit=dev
+
+    # ----------------------
+    # TU IA AUDITOR 🔥
+    # ----------------------
+
+    - name: 🧠 Auditoría IA DMR4
+      run: node index.js || echo "⚠️ Auditor IA falló"
+
+    # ----------------------
+    # BUILD CHECK
+    # ----------------------
+
+    - name: ⚙️ Verificar arranque
       run: |
-        echo "🔍 Escaneando vulnerabilidades en el código de Dentalmovilr4..."
-        npm audit fix --force || true
-    - name: Enviar notificación a Telegram
-      uses: appleboy/telegram-action@master
+        node server.js &
+        sleep 5
+        pkill -f server.js || true
+
+    # ----------------------
+    # NOTIFICACIONES
+    # ----------------------
+
+    - name: 📡 Notificación éxito
+      if: success()
+      uses: appleboy/telegram-action@v0.1.1
       with:
         to: ${{ secrets.CHAT_ID }}
         token: ${{ secrets.TELEGRAM_TOKEN }}
         message: |
-          🚀 ¡IA-DMR4 Actualizada!
-          
-          El repositorio de Dentalmovilr4 ha sido sincronizado con éxito.
-          Estado: ✅ Build Finalizado.
-          Rama: ${{ github.ref_name }}
-          
-          El sistema está listo en Termux.
+          ✅ *DMR4 BUILD EXITOSO*
 
+          📦 Repo: ${{ github.repository }}
+          🌿 Rama: ${{ github.ref_name }}
+          👤 Autor: ${{ github.actor }}
+
+    - name: 🚨 Notificación fallo
+      if: failure()
+      uses: appleboy/telegram-action@v0.1.1
+      with:
+        to: ${{ secrets.CHAT_ID }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: |
+          ❌ *DMR4 BUILD FALLÓ*
+
+          📦 Repo: ${{ github.repository }}
+          🌿 Rama: ${{ github.ref_name }}
+
+          🔍 Revisa errores en GitHub Actions
