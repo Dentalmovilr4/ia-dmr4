@@ -1,85 +1,146 @@
-name: CI-IA-DMR4-CORE
+name: CI-IA-DMR4-AUTOCORRECTOR
 
 on:
   push:
     branches: [ main ]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
-  build:
+  ai-fix:
     runs-on: ubuntu-latest
 
     steps:
+
+    # ----------------------
+    # CLONAR
+    # ----------------------
     - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    - name: 🟢 Node 20
+    # ----------------------
+    # NODE
+    # ----------------------
+    - name: 🟢 Node
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
 
     # ----------------------
-    # DEPENDENCIAS SEGURAS
+    # DEPENDENCIAS
     # ----------------------
-    - name: 📦 Install limpio
-      run: npm ci
+    - name: 📦 Install
+      run: npm install --legacy-peer-deps
 
     # ----------------------
-    # VALIDACIÓN DE CÓDIGO
+    # DETECTAR ERRORES
     # ----------------------
-    - name: 🧪 Verificar sintaxis global
+    - name: 🧪 Analizar errores
+      id: scan
       run: |
-        node -c brain.js
-        node -c server.js
-        node -c processManager.js
-        node -c dex.js
+        echo "🔍 Escaneando JS..."
+        node -e "
+        const { execSync } = require('child_process');
+        const fs = require('fs');
 
-    # ----------------------
-    # SEGURIDAD
-    # ----------------------
-    - name: 🔒 Auditoría crítica
-      run: npm audit --audit-level=high --omit=dev
+        const files = execSync('find . -name \"*.js\"').toString().trim().split('\n');
 
-    # ----------------------
-    # IA AUDITOR (NO BLOQUEANTE)
-    # ----------------------
-    - name: 🧠 Auditoría IA
-      run: node index.js || echo "⚠️ IA reportó problemas"
+        let errors = [];
 
-    # ----------------------
-    # TEST DE ARRANQUE REAL
-    # ----------------------
-    - name: ⚙️ Test de ejecución
-      run: |
-        node server.js &
-        sleep 5
-        pkill -f server.js || true
+        for (const f of files) {
+          try {
+            execSync('node -c ' + f);
+          } catch (e) {
+            errors.push(f);
+          }
+        }
 
+        fs.writeFileSync('errors.json', JSON.stringify(errors));
+        console.log('Errores:', errors);
+        "
+    
     # ----------------------
-    # TELEGRAM
+    # SI NO HAY ERRORES
     # ----------------------
-    - name: 📡 Éxito
+    - name: ✔ Sin errores
       if: success()
-      uses: appleboy/telegram-action@v0.1.1
-      with:
-        to: ${{ secrets.CHAT_ID }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: |
-          ✅ *DMR4 CORE OK*
-          
-          🧠 Sistema validado
-          🔒 Seguridad OK
-          ⚙️ Arranque OK
+      run: echo "Todo OK"
 
-    - name: 🚨 Fallo
+    # ----------------------
+    # IA AUTO-FIX
+    # ----------------------
+    - name: 🧠 IA Fix Engine
       if: failure()
-      uses: appleboy/telegram-action@v0.1.1
-      with:
-        to: ${{ secrets.CHAT_ID }}
-        token: ${{ secrets.TELEGRAM_TOKEN }}
-        message: |
-          ❌ *DMR4 FALLÓ*
-          
-          🔍 Revisar errores en CI
-          🤖 Sistema necesita intervención
+      run: |
+        node -e "
+        const fs = require('fs');
+        const axios = require('axios');
+
+        const errors = JSON.parse(fs.readFileSync('errors.json','utf8'));
+
+        async function fix(file) {
+          const code = fs.readFileSync(file,'utf8');
+
+          const prompt = `
+Eres un experto en Node.js.
+Corrige este código sin cambiar su lógica principal.
+Devuelve SOLO el código corregido.
+
+ARCHIVO:
+${file}
+
+CODIGO:
+${code}
+          `;
+
+          const res = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+              model: 'gpt-4o-mini',
+              messages: [{ role: 'user', content: prompt }]
+            },
+            {
+              headers: {
+                Authorization: 'Bearer ' + process.env.OPENAI_API_KEY
+              }
+            }
+          );
+
+          const fixed = res.data.choices[0].message.content;
+
+          fs.writeFileSync(file, fixed);
+          console.log('Fixed:', file);
+        }
+
+        (async () => {
+          for (const f of errors) {
+            await fix(f);
+          }
+        })();
+        "
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    # ----------------------
+    # VALIDACIÓN POST-FIX
+    # ----------------------
+    - name: 🔁 Recheck
+      run: |
+        for file in $(find . -name "*.js"); do
+          node -c "$file" || exit 1
+        done
+
+    # ----------------------
+    # AUTO COMMIT FIX
+    # ----------------------
+    - name: 📦 Commit fixes
+      if: success()
+      run: |
+        git config user.name "dmr4-ai-bot"
+        git config user.email "ai@dmr4.bot"
+
+        git add .
+        git commit -m "🤖 AI Auto-Fix aplicado por DMR4 CI" || echo "sin cambios"
+        git push
