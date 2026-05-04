@@ -1,33 +1,35 @@
 /**
- * IA-DMR4 PRO - NÚCLEO CENTRAL UNIFICADO
- * Incluye Estrategia IA y Auto-Scaling Cluster
+ * IA-DMR4 PRO - NÚCLEO CENTRAL UNIFICADO + FAILOVER
  */
 
 require('dotenv').config();
+
 const manager = require('./processManager');
 const learning = require('./learning');
 const { decidirEstrategia } = require('./aiStrategy');
 const { obtenerDatosToken } = require('./dex');
 const { alerta, logSistema } = require('./bot');
-const { pushTask } = require('./queue'); // Integración de cola de tareas
+const { pushTask } = require('./queue');
+const { detectarFallos } = require('./failover');
 
 const fs = require('fs/promises');
 const path = require('path');
 
 const DATA_FILE = path.join(__dirname, 'data.json');
-const INTERVALO_IA = 30000; // 30s para decisiones de mercado
-const INTERVALO_CLUSTER = 15000; // 15s para auto-scaling
+
+const INTERVALO_IA = 30000;
+const INTERVALO_FAILOVER = 5000;
 
 let estadoGlobal = {
   estrategia: 'CONSERVADOR',
   mercado: {},
   ultimaDecision: null,
   lock: false,
-  cluster: {} // Seguimiento de réplicas activas
+  cluster: {}
 };
 
 // ----------------------
-// CARGAR Y NORMALIZAR REPOS
+// CARGAR REPOS
 // ----------------------
 async function cargarRepos() {
   try {
@@ -41,10 +43,11 @@ async function cargarRepos() {
         prioridad: base.prioridad || 5,
         critico: base.critico || false,
         autoRestart: base.autoRestart ?? true,
-        replicas: base.replicas || 1, // Nuevo: Soporte para auto-scaling
+        replicas: base.replicas || 1,
         tipo: base.tipo || 'general'
       };
     });
+
   } catch {
     await alerta('error', 'Error cargando data.json');
     return [];
@@ -52,115 +55,158 @@ async function cargarRepos() {
 }
 
 // ----------------------
-// LÓGICA DE AUTO-SCALING (INTEGRADA)
+// AUTO-SCALING
 // ----------------------
 async function gestionarEscalado(repo, activo) {
+
   const actuales = estadoGlobal.cluster[repo.name] || (activo ? 1 : 0);
-  
-  // Si faltan réplicas según la configuración del repo
+
   if (actuales < repo.replicas) {
+
     const faltan = repo.replicas - actuales;
+
     for (let i = 0; i < faltan; i++) {
       await pushTask({ action: 'start', repo: repo.name });
-      console.log(`🚀 Escalando+: ${repo.name} (+1)`);
+      console.log(`🚀 Escalando+: ${repo.name}`);
     }
+
     estadoGlobal.cluster[repo.name] = repo.replicas;
-  } 
-  // Si sobran réplicas (Scaling down)
-  else if (actuales > repo.replicas) {
+
+  } else if (actuales > repo.replicas) {
+
     await pushTask({ action: 'stop', repo: repo.name });
-    console.log(`📉 Escalando-: ${repo.name} (-1)`);
+    console.log(`📉 Escalando-: ${repo.name}`);
+
     estadoGlobal.cluster[repo.name]--;
   }
 }
 
 // ----------------------
-// EJECUCIÓN ESTRATÉGICA
+// EJECUCIÓN IA
 // ----------------------
 async function ejecutar(repos, estrategia) {
+
   for (const repo of repos) {
+
     const procesos = manager.getProcesos();
     const activo = procesos[repo.name];
     const aprendizaje = await learning.evaluar(repo.name);
 
-    // 🛡️ Bloqueo por inestabilidad (Prioridad Máxima)
+    // 🛡️ BLOQUEO
     if (aprendizaje === 'INESTABLE') {
       if (activo) {
         await pushTask({ action: 'stop', repo: repo.name });
-        await alerta('error', `🛡️ ${repo.name} bloqueado por inestabilidad`);
+        await alerta('error', `🛡️ ${repo.name} bloqueado`);
       }
       continue;
     }
 
     try {
-      // 1. Aplicar Estrategia de IA
+
       switch (estrategia) {
+
         case 'DEFENSIVO':
-          if (!repo.critico && activo) await pushTask({ action: 'stop', repo: repo.name });
+          if (!repo.critico && activo) {
+            await pushTask({ action: 'stop', repo: repo.name });
+          }
           break;
 
         case 'CONSERVADOR':
-          if (repo.prioridad >= 5 && !activo) await pushTask({ action: 'start', repo: repo.name });
+          if (repo.prioridad >= 5 && !activo) {
+            await pushTask({ action: 'start', repo: repo.name });
+          }
           break;
 
         case 'AGRESIVO':
         case 'EXPANSIVO':
-          if (!activo) await pushTask({ action: 'start', repo: repo.name });
+          if (!activo) {
+            await pushTask({ action: 'start', repo: repo.name });
+          }
           break;
       }
 
-      // 2. Aplicar Auto-Scaling (Mantener réplicas)
       await gestionarEscalado(repo, activo);
 
-      if (activo) await learning.registrar(repo.name, 'exito');
+      if (activo) {
+        await learning.registrar(repo.name, 'exito');
+      }
 
     } catch (err) {
       await learning.registrar(repo.name, 'fallo');
-      await alerta('error', `❌ Error en ejecución ${repo.name}: ${err.message}`);
+      await alerta('error', `❌ Error en ${repo.name}: ${err.message}`);
     }
   }
 }
 
 // ----------------------
-// CICLO OPERATIVO
+// CICLO IA
 // ----------------------
-async function ciclo() {
+async function cicloIA() {
+
   if (estadoGlobal.lock) return;
   estadoGlobal.lock = true;
 
   try {
+
     const repos = await cargarRepos();
+
     const mercado = await obtenerDatosToken();
     estadoGlobal.mercado = mercado;
 
-    const nuevaEstrategia = await decidirEstrategia({ mercado, procesos: manager.getProcesos() });
+    const nuevaEstrategia = await decidirEstrategia({
+      mercado,
+      procesos: manager.getProcesos()
+    });
 
     if (estadoGlobal.estrategia !== nuevaEstrategia) {
-      await logSistema(`Cambio de estrategia: ${nuevaEstrategia}`);
+      await logSistema(`Cambio estrategia: ${nuevaEstrategia}`);
       estadoGlobal.estrategia = nuevaEstrategia;
     }
 
     await ejecutar(repos, nuevaEstrategia);
+
     estadoGlobal.ultimaDecision = Date.now();
-    console.log(`🧠 [${nuevaEstrategia}] Ciclo de cluster completado OK`);
+
+    console.log(`🧠 [${nuevaEstrategia}] ciclo OK`);
 
   } catch (err) {
-    console.error("❌ Error ciclo:", err.message);
-  } finally {
-    estadoGlobal.lock = false;
+    console.error("❌ Error IA:", err.message);
+  }
+
+  estadoGlobal.lock = false;
+}
+
+// ----------------------
+// CICLO FAILOVER
+// ----------------------
+async function cicloFailover() {
+  try {
+    await detectarFallos();
+  } catch (err) {
+    console.error("❌ Error failover:", err.message);
   }
 }
 
 // ----------------------
-// ARRANQUE
+// START
 // ----------------------
 async function iniciarCerebro() {
-  console.log("🧠 DMR4 PRO + CLUSTER MANAGER ONLINE");
+
+  console.log("🧠 DMR4 PRO + CLUSTER + FAILOVER ONLINE");
+
   await manager.inicializar();
 
-  // Ejecutar ciclos en sus respectivos intervalos
-  setInterval(ciclo, INTERVALO_IA);
-  await ciclo();
+  // IA (decisiones)
+  setInterval(cicloIA, INTERVALO_IA);
+
+  // FAILOVER (alta frecuencia)
+  setInterval(cicloFailover, INTERVALO_FAILOVER);
+
+  // ejecución inmediata
+  await cicloIA();
 }
 
-module.exports = { iniciarCerebro, estadoGlobal };
+module.exports = {
+  iniciarCerebro,
+  estadoGlobal
+};
