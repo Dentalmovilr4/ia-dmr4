@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html>
+<body>
+<h1>DMR4 PANEL</h1>
+<button onclick="start()">START</button>
+<div id="nodes"></div>
+<div id="procs"></div>
+
+<script>
+async function load(){
+  const r=await fetch('http://localhost:3001/metrics');
+  const d=await r.json();
+
+  nodes.innerHTML='';
+  procs.innerHTML='';
+
+  Object.entries(d.nodes).forEach(([id,n])=>{
+    nodes.innerHTML+=`🖥️ ${id} CPU:${n.cpu}% RAM:${n.ram}%<br>`;
+  });
+
+  Object.entries(d.procesos).forEach(([id,p])=>{
+    procs.innerHTML+=`⚙️ ${id} @ ${p.node}
+    <button onclick="stop('${id}')">STOP</button><br>`;
+  });
+}
+
+async function start(){
+  const repo=prompt("repo");
+  await fetch('http://localhost:3001/start',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({repo})
+  });
+}
+
+async function stop(repo){
+  await fetch('http://localhost:3001/stop',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({repo})
+  });
+}
+
+setInterval(load,2000);
+</script>
+</body>
+</html>

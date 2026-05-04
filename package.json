@@ -1,55 +1,11 @@
+
 {
-  "name": "ia-dmr4",
-  "version": "1.2.0",
-  "description": "Sistema inteligente autónomo DMR4 (IA + Optimización + Autopilot)",
-  "main": "server.js",
-  "type": "commonjs",
-
-  "scripts": {
-    "start": "node server.js",
-    "brain": "node main.js",
-    "dev": "nodemon server.js",
-    "dev:brain": "nodemon main.js",
-
-    "restart": "node scripts/restart.js",
-
-    "audit": "node index.js",
-    "diagnostic": "node ia-diagnostico.js",
-
-    "test:run": "node -c server.js && node -c brain.js",
-    
-    "logs": "tail -f *.log",
-    "clean": "rm -f estado.json *.log"
-  },
-
-  "keywords": [
-    "dmr4",
-    "automation",
-    "ai",
-    "autopilot",
-    "process-manager"
-  ],
-
-  "author": "Dentalmovilr4",
-  "license": "ISC",
-
-  "engines": {
-    "node": ">=18"
-  },
-
-  "dependencies": {
-    "@google/generative-ai": "^0.11.0",
-    "@supabase/supabase-js": "^2.103.0",
-    "axios": "^1.15.0",
-    "cors": "^2.8.6",
-    "discord.js": "^14.26.2",
-    "dotenv": "^17.4.1",
-    "express": "^5.2.1",
-    "node-telegram-bot-api": "^0.67.0",
-    "qrcode": "^1.5.4"
-  },
-
-  "devDependencies": {
-    "nodemon": "^3.1.0"
+  "name":"dmr4-cloud",
+  "version":"1.0.0",
+  "main":"api.js",
+  "dependencies":{
+    "ioredis":"^5.3.2",
+    "express":"^4.18.2",
+    "dotenv":"^16.4.5"
   }
 }

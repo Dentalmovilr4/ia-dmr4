@@ -1,50 +1,68 @@
-const Redis = require('ioredis');
-const redis = new Redis(process.env.REDIS_URL);
 
-const TIMEOUT = 10000;
+require('dotenv').config();
+const Redis=require('ioredis');
+const {soyLider}=require('./leader');
+const {ping}=require('./latency');
 
-// ----------------------
-// OBTENER NODOS VIVOS
-// ----------------------
-async function obtenerNodosVivos() {
+const r=new Redis(process.env.REDIS_URL);
+const REGION=process.env.REGION;
 
-  const raw = await redis.hgetall('dmr4:nodes');
-  const ahora = Date.now();
+// mapa simple de hosts por región (ajústalo a tus IPs)
+const REGION_HOST={
+  'us-east':'8.8.8.8',
+  'eu-west':'1.1.1.1',
+  'sa-south':'8.8.4.4'
+};
 
-  const vivos = [];
+async function elegirNodo(nodos){
 
-  for (const [node, data] of Object.entries(raw)) {
-    const info = JSON.parse(data);
+  let mejor=null;
 
-    if (ahora - info.timestamp < TIMEOUT) {
-      vivos.push({ node, ...info });
+  for(const n of nodos){
+
+    const host=REGION_HOST[n.region]||'8.8.8.8';
+    const lat=await ping(host);
+
+    const score=(n.cpu*0.5)+(n.ram*0.2)+(lat*0.3);
+
+    if(!mejor || score<mejor.score){
+      mejor={...n,score,lat};
     }
   }
 
-  return vivos;
+  return mejor;
 }
 
-// ----------------------
-// SCORE DEL NODO
-// ----------------------
-function calcularScore(n) {
+async function ciclo(){
 
-  // 🔥 fórmula simple pero efectiva
-  return (n.cpu * 0.6) + (n.ram * 0.4);
+  if(!(await soyLider())) return;
+
+  const raw=await r.hgetall('dmr4:nodes');
+  const nodos=Object.entries(raw).map(([id,v])=>{
+    const x=JSON.parse(v);
+    return {id,...x};
+  });
+
+  const procesos=await r.hgetall('dmr4:procesos');
+
+  const servicio='app1';
+
+  if(!procesos[servicio]){
+
+    const n=await elegirNodo(nodos);
+    if(!n) return;
+
+    await r.lpush('dmr4:tasks',JSON.stringify({
+      action:'start',
+      repo:servicio,
+      targetNode:n.id,
+      region:n.region,
+      latency:n.lat
+    }));
+
+    console.log("🧠 GLOBAL →",servicio,"@",n.id,"lat:",n.lat);
+  }
 }
 
-// ----------------------
-// ELEGIR MEJOR NODO
-// ----------------------
-async function elegirNodo() {
-
-  const nodos = await obtenerNodosVivos();
-
-  if (nodos.length === 0) return null;
-
-  nodos.sort((a, b) => calcularScore(a) - calcularScore(b));
-
-  return nodos[0].node; // el menos cargado
-}
-
-module.exports = { elegirNodo };
+setInterval(ciclo,4000);
+console.log("🧠 ULTRA GLOBAL SCHEDULER");

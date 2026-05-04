@@ -1,0 +1,1865 @@
+{
+  "Quimica-Organica-DMR4": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 92,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684594
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714608
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744868
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774489
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804447
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834196
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864880
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894829
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924736
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954161
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985062
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014575
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045049
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074162
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105050
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134649
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165373
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194694
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225191
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254688
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286720
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924315946
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346326
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376835
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406417
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436834
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466280
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497567
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924525979
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556393
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587296
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616718
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646389
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924675982
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924706964
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735852
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766857
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924795935
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924826685
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924855901
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924886897
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916126
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924946765
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976005
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006796
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036000
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066815
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097108
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126069
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157332
+      }
+    ]
+  },
+  "dmr4-token-web": {
+    "fallos": 1,
+    "reinicios": 0,
+    "exitos": 91,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684609
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714638
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744903
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774517
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804462
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834241
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864896
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894846
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924783
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954186
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985092
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014593
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045067
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074184
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105076
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134672
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165412
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194716
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225232
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254724
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286737
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924315977
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346353
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376866
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406437
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436863
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466299
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497596
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924525995
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556420
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587330
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616745
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646406
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676003
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924706991
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735869
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766873
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924795950
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924826748
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924855942
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924886928
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916145
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924946853
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976034
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006822
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036026
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066836
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097130
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126082
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157362
+      }
+    ]
+  },
+  "Agro-Tech-Dmr4-IA": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 92,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684619
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714655
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744928
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774527
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804473
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834260
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864910
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894856
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924813
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954201
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985110
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014606
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045081
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074196
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105089
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134684
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165429
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194729
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225245
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254743
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286747
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924315993
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346371
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376884
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406447
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436881
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466309
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497611
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526006
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556438
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587368
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616767
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646419
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676026
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707012
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735883
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766886
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924795964
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924826857
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924855961
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924886950
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916162
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924946934
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976063
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006846
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036050
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066855
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097150
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126093
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157386
+      }
+    ]
+  },
+  "MotoTech-DMR4": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 92,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684638
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714671
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744937
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774541
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804499
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834283
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864919
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894871
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924842
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954216
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985136
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014617
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045096
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074217
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105104
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134700
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165444
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194742
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225258
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254760
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286760
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924316007
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346402
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376907
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406463
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436908
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466323
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497632
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526019
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556546
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587469
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616780
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646430
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676038
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707028
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735895
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766896
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924795974
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924826943
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924855978
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924886961
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916173
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924947032
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976082
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006864
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036066
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066870
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097159
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126102
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157405
+      }
+    ]
+  },
+  "MotoTech-AI": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 92,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684650
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714687
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744946
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774549
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804514
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834297
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864932
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894879
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924864
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954239
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985154
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014644
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045116
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074232
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105117
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134722
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165464
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194760
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225283
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254781
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286774
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924316024
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346422
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376921
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406475
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436923
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466335
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497646
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526029
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556585
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587512
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616814
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646442
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676051
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707043
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735907
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766906
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924795985
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924826968
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924855991
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924886975
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916183
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924947085
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976100
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006882
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036079
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066885
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097168
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126110
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157420
+      }
+    ]
+  },
+  "Vigilante-Red": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 91,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684670
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714722
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744960
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774566
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804536
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834323
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864948
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894895
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924896
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954263
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985168
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014660
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045139
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074260
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105135
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134742
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165498
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194778
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225307
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254810
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286790
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924316045
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346445
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376944
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406497
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436943
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466365
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497668
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526044
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556609
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587546
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616871
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646462
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676077
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707068
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735929
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766928
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924795999
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924827043
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924856017
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924886996
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916202
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924947137
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976128
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006917
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036109
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066909
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097185
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126126
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157448
+      }
+    ]
+  },
+  "Dmr4-Control-Center": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 91,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684687
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714752
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744977
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774586
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804560
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834345
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864964
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894913
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924922
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954287
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985180
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014676
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045160
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074283
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105153
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134765
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165528
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194795
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225330
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254833
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286806
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924316064
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346468
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376964
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406511
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436966
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466384
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497693
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526059
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556696
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587567
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616961
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646482
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676094
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707085
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735947
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766944
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924796014
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924827124
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924856035
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924887012
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916216
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924947197
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976159
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006942
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036129
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066927
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097198
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126143
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157465
+      }
+    ]
+  },
+  "DMR4-Riego-Inteligente-FINAL": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 91,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684697
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714771
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923744987
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774600
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804581
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834356
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864975
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894933
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924941
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954307
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985191
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014686
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045168
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074304
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105166
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134778
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165541
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194805
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225345
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254844
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286816
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924316077
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346482
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376977
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406521
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924436981
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466403
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497713
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526071
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556707
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587579
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924616993
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646493
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676105
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707096
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735958
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766962
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924796024
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924827223
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924856046
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924887026
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916225
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924947244
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976174
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006960
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036141
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066939
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097207
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126154
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157476
+      }
+    ]
+  },
+  "DMR4-Quantum-Assets": {
+    "fallos": 0,
+    "reinicios": 0,
+    "exitos": 91,
+    "historial": [
+      {
+        "tipo": "exito",
+        "time": 1777923684720
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923714793
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923745004
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923774617
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923804601
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923834372
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923864995
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923894965
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923924964
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923954330
+      },
+      {
+        "tipo": "exito",
+        "time": 1777923985204
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924014699
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924045187
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924074322
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924105185
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924134803
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924165577
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924194823
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924225370
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924254869
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924286843
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924316095
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924346501
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924376998
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924406537
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924437000
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924466424
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924497738
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924526085
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924556724
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924587608
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924617014
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924646509
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924676120
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924707111
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924735974
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924766995
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924796039
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924827286
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924856063
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924887046
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924916238
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924947293
+      },
+      {
+        "tipo": "exito",
+        "time": 1777924976195
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925006983
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925036160
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925066956
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925097220
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925126173
+      },
+      {
+        "tipo": "exito",
+        "time": 1777925157493
+      }
+    ]
+  }
+}

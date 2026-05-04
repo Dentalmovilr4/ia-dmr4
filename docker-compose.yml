@@ -1,0 +1,63 @@
+
+version: '3.9'
+
+services:
+
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+
+  api:
+    build: .
+    command: node api.js
+    restart: always
+    env_file: .env
+    ports:
+      - "3001:3001"
+    depends_on:
+      - redis
+
+  scheduler:
+    build: .
+    command: node scheduler.js
+    restart: always
+    env_file: .env
+    depends_on:
+      - redis
+
+  failover:
+    build: .
+    command: node failover.js
+    restart: always
+    env_file: .env
+    depends_on:
+      - redis
+
+  worker1:
+    build: .
+    command: node worker.js
+    restart: always
+    env_file: .env
+    environment:
+      - NODE_ID=node1
+      - REGION=us-east
+
+  worker2:
+    build: .
+    command: node worker.js
+    restart: always
+    env_file: .env
+    environment:
+      - NODE_ID=node2
+      - REGION=eu-west
+
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - "80:80"
+    depends_on:
+      - api
