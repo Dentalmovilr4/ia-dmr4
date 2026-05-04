@@ -1,5 +1,6 @@
 /**
- * IA-DMR4 PRO - NÚCLEO CENTRAL UNIFICADO + FAILOVER
+ * IA-DMR4 PRO - CEREBRO TOTAL
+ * Scheduler inteligente por nodo + Auto-scaling + Failover
  */
 
 require('dotenv').config();
@@ -11,6 +12,9 @@ const { obtenerDatosToken } = require('./dex');
 const { alerta, logSistema } = require('./bot');
 const { pushTask } = require('./queue');
 const { detectarFallos } = require('./failover');
+
+const Redis = require('ioredis');
+const redis = new Redis(process.env.REDIS_URL);
 
 const fs = require('fs/promises');
 const path = require('path');
@@ -55,29 +59,77 @@ async function cargarRepos() {
 }
 
 // ----------------------
-// AUTO-SCALING
+// 🧠 OBTENER NODOS
 // ----------------------
-async function gestionarEscalado(repo, activo) {
+async function obtenerNodos() {
+  const raw = await redis.hgetall('dmr4:nodes');
 
-  const actuales = estadoGlobal.cluster[repo.name] || (activo ? 1 : 0);
+  const nodos = Object.entries(raw).map(([id, data]) => {
+    const info = JSON.parse(data);
+    return {
+      id,
+      cpu: info.cpu || 0,
+      ram: info.ram || 0,
+      timestamp: info.timestamp || 0
+    };
+  });
+
+  return nodos;
+}
+
+// ----------------------
+// 🧠 ELEGIR MEJOR NODO
+// ----------------------
+function elegirNodo(nodos) {
+  if (nodos.length === 0) return null;
+
+  // ordenar por menor carga (CPU + RAM)
+  nodos.sort((a, b) => {
+    const cargaA = a.cpu + a.ram;
+    const cargaB = b.cpu + b.ram;
+    return cargaA - cargaB;
+  });
+
+  return nodos[0]; // el más liviano
+}
+
+// ----------------------
+// AUTO-SCALING INTELIGENTE
+// ----------------------
+async function escalarRepo(repo) {
+
+  const procesosRaw = await redis.hgetall('dmr4:procesos');
+
+  const actuales = Object.values(procesosRaw)
+    .map(x => JSON.parse(x))
+    .filter(p => p.repo === repo.name).length;
 
   if (actuales < repo.replicas) {
 
-    const faltan = repo.replicas - actuales;
+    const nodos = await obtenerNodos();
+    const nodo = elegirNodo(nodos);
 
-    for (let i = 0; i < faltan; i++) {
-      await pushTask({ action: 'start', repo: repo.name });
-      console.log(`🚀 Escalando+: ${repo.name}`);
+    if (!nodo) {
+      console.log("⚠️ No hay nodos disponibles");
+      return;
     }
 
-    estadoGlobal.cluster[repo.name] = repo.replicas;
+    await pushTask({
+      action: 'start',
+      repo: repo.name,
+      targetNode: nodo.id
+    });
+
+    console.log(`🚀 ${repo.name} → ${nodo.id}`);
 
   } else if (actuales > repo.replicas) {
 
-    await pushTask({ action: 'stop', repo: repo.name });
-    console.log(`📉 Escalando-: ${repo.name}`);
+    await pushTask({
+      action: 'stop',
+      repo: repo.name
+    });
 
-    estadoGlobal.cluster[repo.name]--;
+    console.log(`📉 Reduciendo ${repo.name}`);
   }
 }
 
@@ -88,16 +140,10 @@ async function ejecutar(repos, estrategia) {
 
   for (const repo of repos) {
 
-    const procesos = manager.getProcesos();
-    const activo = procesos[repo.name];
     const aprendizaje = await learning.evaluar(repo.name);
 
-    // 🛡️ BLOQUEO
     if (aprendizaje === 'INESTABLE') {
-      if (activo) {
-        await pushTask({ action: 'stop', repo: repo.name });
-        await alerta('error', `🛡️ ${repo.name} bloqueado`);
-      }
+      await pushTask({ action: 'stop', repo: repo.name });
       continue;
     }
 
@@ -106,34 +152,28 @@ async function ejecutar(repos, estrategia) {
       switch (estrategia) {
 
         case 'DEFENSIVO':
-          if (!repo.critico && activo) {
+          if (!repo.critico) {
             await pushTask({ action: 'stop', repo: repo.name });
           }
           break;
 
         case 'CONSERVADOR':
-          if (repo.prioridad >= 5 && !activo) {
-            await pushTask({ action: 'start', repo: repo.name });
+          if (repo.prioridad >= 5) {
+            await escalarRepo(repo);
           }
           break;
 
         case 'AGRESIVO':
         case 'EXPANSIVO':
-          if (!activo) {
-            await pushTask({ action: 'start', repo: repo.name });
-          }
+          await escalarRepo(repo);
           break;
       }
 
-      await gestionarEscalado(repo, activo);
-
-      if (activo) {
-        await learning.registrar(repo.name, 'exito');
-      }
+      await learning.registrar(repo.name, 'exito');
 
     } catch (err) {
       await learning.registrar(repo.name, 'fallo');
-      await alerta('error', `❌ Error en ${repo.name}: ${err.message}`);
+      await alerta('error', err.message);
     }
   }
 }
@@ -153,21 +193,21 @@ async function cicloIA() {
     const mercado = await obtenerDatosToken();
     estadoGlobal.mercado = mercado;
 
-    const nuevaEstrategia = await decidirEstrategia({
+    const estrategia = await decidirEstrategia({
       mercado,
       procesos: manager.getProcesos()
     });
 
-    if (estadoGlobal.estrategia !== nuevaEstrategia) {
-      await logSistema(`Cambio estrategia: ${nuevaEstrategia}`);
-      estadoGlobal.estrategia = nuevaEstrategia;
+    if (estadoGlobal.estrategia !== estrategia) {
+      await logSistema(`Cambio estrategia: ${estrategia}`);
+      estadoGlobal.estrategia = estrategia;
     }
 
-    await ejecutar(repos, nuevaEstrategia);
+    await ejecutar(repos, estrategia);
 
     estadoGlobal.ultimaDecision = Date.now();
 
-    console.log(`🧠 [${nuevaEstrategia}] ciclo OK`);
+    console.log(`🧠 [${estrategia}] OK`);
 
   } catch (err) {
     console.error("❌ Error IA:", err.message);
@@ -177,13 +217,13 @@ async function cicloIA() {
 }
 
 // ----------------------
-// CICLO FAILOVER
+// FAILOVER
 // ----------------------
 async function cicloFailover() {
   try {
     await detectarFallos();
   } catch (err) {
-    console.error("❌ Error failover:", err.message);
+    console.error("❌ Failover error:", err.message);
   }
 }
 
@@ -192,17 +232,13 @@ async function cicloFailover() {
 // ----------------------
 async function iniciarCerebro() {
 
-  console.log("🧠 DMR4 PRO + CLUSTER + FAILOVER ONLINE");
+  console.log("🧠 DMR4 FULL CLUSTER ONLINE");
 
   await manager.inicializar();
 
-  // IA (decisiones)
   setInterval(cicloIA, INTERVALO_IA);
-
-  // FAILOVER (alta frecuencia)
   setInterval(cicloFailover, INTERVALO_FAILOVER);
 
-  // ejecución inmediata
   await cicloIA();
 }
 
