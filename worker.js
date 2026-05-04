@@ -1,5 +1,6 @@
 /**
- * IA-DMR4 WORKER PRO - Failover + Lock + Anti-duplicados
+ * IA-DMR4 WORKER PRO - FINAL ESTABLE
+ * Cluster + Lock + Anti-duplicados + Scheduler compatible
  */
 
 require('dotenv').config();
@@ -11,10 +12,11 @@ const Redis = require('ioredis');
 
 const BASE = process.env.BASE_DIR;
 const NODE_ID = process.env.NODE_ID || 'node1';
+
 const redis = new Redis(process.env.REDIS_URL);
 
 let procesos = {};
-let reinicios = {}; // control anti-loop
+let reinicios = {};
 
 // =========================
 // 🔒 LOCK DISTRIBUIDO
@@ -31,11 +33,12 @@ async function releaseLock(repo) {
 }
 
 // =========================
-// REDIS
+// REDIS (IMPORTANTE FIX)
 // =========================
 
 async function registrarProceso(repo, pid) {
   await redis.hset('dmr4:procesos', repo, JSON.stringify({
+    repo, // 🔥 FIX CLAVE
     node: NODE_ID,
     pid,
     timestamp: Date.now()
@@ -47,12 +50,31 @@ async function eliminarProceso(repo) {
 }
 
 // =========================
-// VALIDACIÓN GLOBAL
+// VALIDACIONES
 // =========================
 
-async function yaExiste(repo) {
+async function yaExisteGlobal(repo) {
   const data = await redis.hget('dmr4:procesos', repo);
   return !!data;
+}
+
+function yaExisteLocal(repo) {
+  return !!procesos[repo];
+}
+
+// =========================
+// LIMPIEZA INICIAL (CRÍTICO)
+// =========================
+
+async function limpiarZombies() {
+  for (const repo in procesos) {
+    try {
+      process.kill(procesos[repo].pid, 0);
+    } catch {
+      delete procesos[repo];
+      await eliminarProceso(repo);
+    }
+  }
 }
 
 // =========================
@@ -61,16 +83,21 @@ async function yaExiste(repo) {
 
 async function startRepo(repo) {
 
-  // evitar duplicados globales
-  if (await yaExiste(repo)) {
+  // evitar duplicado local
+  if (yaExisteLocal(repo)) {
+    console.log(`⚠️ ${repo} ya está corriendo en este nodo`);
+    return;
+  }
+
+  // evitar duplicado global
+  if (await yaExisteGlobal(repo)) {
     console.log(`⚠️ ${repo} ya existe en cluster`);
     return;
   }
 
-  // lock distribuido
   const locked = await acquireLock(repo);
   if (!locked) {
-    console.log(`🔒 ${repo} bloqueado por otro nodo`);
+    console.log(`🔒 ${repo} bloqueado`);
     return;
   }
 
@@ -97,6 +124,8 @@ async function startRepo(repo) {
 
     console.log(`🚀 ${repo} iniciado en ${NODE_ID}`);
 
+  } catch (err) {
+    console.error(`❌ Error start ${repo}: ${err.message}`);
   } finally {
     await releaseLock(repo);
   }
@@ -118,11 +147,11 @@ async function stopRepo(repo) {
 
   await eliminarProceso(repo);
 
-  console.log(`🛑 ${repo} detenido`);
+  console.log(`🛑 ${repo} detenido en ${NODE_ID}`);
 }
 
 // =========================
-// AUTO-HEALING INTELIGENTE
+// AUTO-HEALING
 // =========================
 
 setInterval(async () => {
@@ -135,9 +164,8 @@ setInterval(async () => {
 
       reinicios[repo] = (reinicios[repo] || 0) + 1;
 
-      // 🚫 evitar loops infinitos
       if (reinicios[repo] > 5) {
-        console.log(`⛔ ${repo} bloqueado por fallos repetidos`);
+        console.log(`⛔ ${repo} bloqueado por fallos`);
         await stopRepo(repo);
         continue;
       }
@@ -155,7 +183,9 @@ setInterval(async () => {
 
 async function loop() {
 
-  console.log(`👷 Worker ${NODE_ID} activo`);
+  console.log(`👷 Worker ${NODE_ID} ONLINE`);
+
+  await limpiarZombies();
 
   while (true) {
 
@@ -164,7 +194,12 @@ async function loop() {
       const task = await popTask();
 
       if (!task) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 300));
+        continue;
+      }
+
+      // 🎯 RESPETO DE NODO
+      if (task.targetNode && task.targetNode !== NODE_ID) {
         continue;
       }
 
@@ -177,9 +212,13 @@ async function loop() {
       }
 
     } catch (err) {
-      console.error(`❌ Error worker: ${err.message}`);
+      console.error(`❌ Worker error: ${err.message}`);
     }
   }
 }
+
+// =========================
+// START
+// =========================
 
 loop();
