@@ -8,11 +8,7 @@ const path = require('path');
 
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-// ----------------------
-// CONFIG AUTÓNOMA
-// ----------------------
-
-const INTERVALO = 30000; // 30s
+const INTERVALO = 30000;
 const LIMITE_FALLOS = 3;
 
 let historial = {};
@@ -20,79 +16,79 @@ let historial = {};
 // ----------------------
 // CARGAR REPOS
 // ----------------------
-
 async function cargarRepos() {
-  const raw = await fs.readFile(DATA_FILE, 'utf8');
-  return JSON.parse(raw);
+  try {
+    const raw = await fs.readFile(DATA_FILE, 'utf8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error("❌ data.json no encontrado o inválido");
+    return [];
+  }
 }
 
 // ----------------------
-// DECISIÓN MERCADO
+// MERCADO
 // ----------------------
-
 async function evaluarMercado() {
-  const data = await obtenerDatosToken();
+  try {
+    const data = await obtenerDatosToken();
 
-  if (data.error) {
-    await alerta('warning', 'Error obteniendo datos del token');
+    if (!data || data.error) {
+      await alerta('warning', 'Error obteniendo datos del token');
+      return null;
+    }
+
+    if (data.estado === 'MUERTO') {
+      await alerta('warning', 'Token sin liquidez');
+      return 'STOP';
+    }
+
+    if (data.estado === 'SALUDABLE') {
+      return 'RUN';
+    }
+
+    return 'HOLD';
+
+  } catch (err) {
+    await alerta('error', 'Fallo en evaluarMercado');
     return null;
   }
-
-  if (data.estado === 'MUERTO') {
-    await alerta('warning', 'Token sin liquidez');
-    return 'STOP';
-  }
-
-  if (data.estado === 'SALUDABLE') {
-    return 'RUN';
-  }
-
-  return 'HOLD';
 }
 
 // ----------------------
-// DECISIÓN POR REPO
+// REPO
 // ----------------------
-
 async function evaluarRepo(repo, decisionMercado) {
   const procesos = manager.getProcesos();
   const activo = procesos[repo.name];
 
-  // Inicializar historial
   if (!historial[repo.name]) {
     historial[repo.name] = { fallos: 0 };
   }
 
-  // 🔥 DECISIONES
-
-  // 1. Mercado manda
+  // MERCADO MANDA
   if (repo.tipo === 'finanzas') {
-    if (decisionMercado === 'STOP') {
-      if (activo) {
-        await manager.detener(repo.name);
-        await alerta('warning', `${repo.name} detenido por mercado`);
-      }
+    if (decisionMercado === 'STOP' && activo) {
+      await manager.detener(repo.name);
+      await alerta('warning', `${repo.name} detenido por mercado`);
       return;
     }
 
-    if (decisionMercado === 'RUN') {
-      if (!activo) {
-        await manager.iniciar(repo.name);
-        await alerta('success', `${repo.name} iniciado por mercado`);
-      }
+    if (decisionMercado === 'RUN' && !activo) {
+      await manager.iniciar(repo.name);
+      await alerta('success', `${repo.name} iniciado por mercado`);
     }
   }
 
-  // 2. Prioridad
+  // PRIORIDAD
   if (repo.prioridad >= 5 && !activo) {
     await manager.iniciar(repo.name);
     await alerta('info', `${repo.name} iniciado por prioridad`);
   }
 
-  // 3. Auto-restart
-  if (repo.autoRestart && activo) {
-    // si el proceso murió
-    if (!activo.pid) {
+  // AUTO-RESTART REAL
+  if (repo.autoRestart) {
+    if (!activo || !activo.pid) {
       historial[repo.name].fallos++;
 
       if (historial[repo.name].fallos >= LIMITE_FALLOS) {
@@ -102,11 +98,13 @@ async function evaluarRepo(repo, decisionMercado) {
       }
 
       await manager.iniciar(repo.name);
-      await alerta('warning', `${repo.name} reiniciado automáticamente`);
+      await alerta('warning', `${repo.name} reiniciado`);
+    } else {
+      historial[repo.name].fallos = 0;
     }
   }
 
-  // 4. Baja prioridad → apagar si no es crítico
+  // BAJA PRIORIDAD
   if (repo.prioridad < 3 && activo && !repo.critico) {
     await manager.detener(repo.name);
     await logSistema(`${repo.name} detenido por baja prioridad`);
@@ -114,13 +112,11 @@ async function evaluarRepo(repo, decisionMercado) {
 }
 
 // ----------------------
-// LOOP PRINCIPAL
+// LOOP
 // ----------------------
-
 async function ciclo() {
   try {
     const repos = await cargarRepos();
-
     const decisionMercado = await evaluarMercado();
 
     for (const repo of repos) {
@@ -136,7 +132,6 @@ async function ciclo() {
 // ----------------------
 // START
 // ----------------------
-
 (async () => {
   console.log("🧠 AUTOPILOT DMR4 INICIADO");
 

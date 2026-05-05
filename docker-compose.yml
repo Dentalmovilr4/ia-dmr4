@@ -1,63 +1,92 @@
-
-version: '3.9'
+version: "3.9"
 
 services:
-
   redis:
-    image: redis:7
+    image: redis:7-alpine
+    container_name: dmr4-redis
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - dmr4-net
 
-  api:
+  orchestrator:
     build: .
-    command: node api.js
+    container_name: orchestrator
+    command: node orchestrator.js
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=redis
+      - CLUSTER_SECRET=${CLUSTER_SECRET}
+    volumes:
+      - ./certs:/app/certs
+      - ./data.json:/app/data.json
+    ports:
+      - "5001:5001"
+      - "9100:9100"
+    networks:
+      - dmr4-net
+
+  worker:
+    build: .
+    command: node workerNode.js
+    deploy:
+      replicas: 1
+    environment:
+      - MASTER_HOST=orchestrator
+      - REDIS_HOST=redis
+      - CLUSTER_SECRET=${CLUSTER_SECRET}
+    volumes:
+      - ./certs:/app/certs
+      - .:/app
+    networks:
+      - dmr4-net
+
+  autoscaler:
+    build: .
+    container_name: dmr4-autoscaler
+    command: node autoscaler.js
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - REDIS_HOST=redis
+    networks:
+      - dmr4-net
+
+  alert-bridge:
+    build: .
+    container_name: alert-bridge
+    command: node alertBridge.js
     restart: always
     env_file: .env
     ports:
       - "3001:3001"
-    depends_on:
-      - redis
+    networks:
+      - dmr4-net
 
-  scheduler:
-    build: .
-    command: node scheduler.js
-    restart: always
-    env_file: .env
-    depends_on:
-      - redis
-
-  failover:
-    build: .
-    command: node failover.js
-    restart: always
-    env_file: .env
-    depends_on:
-      - redis
-
-  worker1:
-    build: .
-    command: node worker.js
-    restart: always
-    env_file: .env
-    environment:
-      - NODE_ID=node1
-      - REGION=us-east
-
-  worker2:
-    build: .
-    command: node worker.js
-    restart: always
-    env_file: .env
-    environment:
-      - NODE_ID=node2
-      - REGION=eu-west
-
-  nginx:
-    image: nginx:latest
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert.rules.yml:/etc/prometheus/alert.rules.yml
     ports:
-      - "80:80"
-    depends_on:
-      - api
+      - "9090:9090"
+    networks:
+      - dmr4-net
+
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    networks:
+      - dmr4-net
+    ports:
+      - "9093:9093"
+
+networks:
+  dmr4-net:
+    driver: bridge
+

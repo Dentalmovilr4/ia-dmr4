@@ -1,20 +1,71 @@
 [
   {
-    "name": "Quimica-Organica-DMR4",
-    "tipo": "educacion",
-    "prioridad": 1,
+    "name": "Dmr4-Control-Center",
+    "path": "./main.js",
+    "tipo": "core",
+    "prioridad": 10,
     "autoRestart": true,
-    "critico": false
+    "critico": true
+  },
+  {
+    "name": "bot-trading",
+    "path": "./bots/trading.js",
+    "tipo": "finanzas",
+    "prioridad": 8,
+    "critico": true,
+    "autoRestart": true
+  },
+  {
+    "name": "DMR4-Quantum-Assets",
+    "path": "./finance/quantum.js",
+    "tipo": "finanzas",
+    "prioridad": 6,
+    "autoRestart": true,
+    "critico": true
   },
   {
     "name": "dmr4-token-web",
+    "path": "./finance/token_web.js",
     "tipo": "finanzas",
     "prioridad": 5,
     "autoRestart": true,
     "critico": true
   },
   {
+    "name": "Vigilante-Red",
+    "path": "./security/vigilante.js",
+    "tipo": "seguridad",
+    "prioridad": 5,
+    "autoRestart": true,
+    "critico": true
+  },
+  {
+    "name": "scraper-news",
+    "path": "./workers/scraper.js",
+    "tipo": "general",
+    "prioridad": 5,
+    "autoRestart": true,
+    "critico": false
+  },
+  {
+    "name": "MotoTech-AI",
+    "path": "./ai/mototech.js",
+    "tipo": "ia",
+    "prioridad": 4,
+    "autoRestart": true,
+    "critico": true
+  },
+  {
     "name": "Agro-Tech-Dmr4-IA",
+    "path": "./iot/agro.js",
+    "tipo": "iot",
+    "prioridad": 3,
+    "autoRestart": true,
+    "critico": false
+  },
+  {
+    "name": "DMR4-Riego-Inteligente-FINAL",
+    "path": "./iot/riego.js",
     "tipo": "iot",
     "prioridad": 3,
     "autoRestart": true,
@@ -22,44 +73,27 @@
   },
   {
     "name": "MotoTech-DMR4",
+    "path": "./iot/moto_fix.js",
     "tipo": "iot",
     "prioridad": 2,
     "autoRestart": false,
     "critico": false
   },
   {
-    "name": "MotoTech-AI",
-    "tipo": "ia",
-    "prioridad": 4,
-    "autoRestart": true,
-    "critico": true
+    "name": "analytics",
+    "path": "./workers/analytics.js",
+    "tipo": "general",
+    "prioridad": 2,
+    "critico": false,
+    "autoRestart": false
   },
   {
-    "name": "Vigilante-Red",
-    "tipo": "seguridad",
-    "prioridad": 5,
-    "autoRestart": true,
-    "critico": true
-  },
-  {
-    "name": "Dmr4-Control-Center",
-    "tipo": "core",
-    "prioridad": 10,
-    "autoRestart": true,
-    "critico": true
-  },
-  {
-    "name": "DMR4-Riego-Inteligente-FINAL",
-    "tipo": "iot",
-    "prioridad": 3,
+    "name": "Quimica-Organica-DMR4",
+    "path": "./edu/quimica.js",
+    "tipo": "educacion",
+    "prioridad": 1,
     "autoRestart": true,
     "critico": false
-  },
-  {
-    "name": "DMR4-Quantum-Assets",
-    "tipo": "finanzas",
-    "prioridad": 6,
-    "autoRestart": true,
-    "critico": true
   }
 ]
+

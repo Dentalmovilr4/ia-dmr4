@@ -1,0 +1,13 @@
+groups:
+  - name: dmr4-rules
+    rules:
+      - alert: HighLoad
+        expr: node_load > 2
+        for: 30s
+        labels: { severity: warning }
+        annotations: { summary: "Carga Alta", description: "Nodo sobrecarregado" }
+      - alert: NodeDown
+        expr: up == 0
+        for: 20s
+        labels: { severity: critical }
+        annotations: { summary: "Nodo Caído", description: "Instância offline" }

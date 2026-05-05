@@ -4,78 +4,78 @@ const TelegramBot = require('node-telegram-bot-api');
 const token = process.env.TELEGRAM_TOKEN;
 const chatId = process.env.CHAT_ID;
 
-// ----------------------
-// VALIDACIÓN
-// ----------------------
-
+// ---------------------------------------------------------
+// VALIDACIÓN DE ENTORNO
+// ---------------------------------------------------------
 if (!token) {
   console.error("❌ ERROR: TELEGRAM_TOKEN no definido");
   process.exit(1);
 }
 
-if (!chatId) {
-  console.warn("⚠️ CHAT_ID no definido (no se podrán enviar mensajes automáticos)");
-}
-
-// polling false → modo backend
 const bot = new TelegramBot(token, { polling: false });
+console.log("🤖 Sistema de Alertas DMR4 Online");
 
-console.log("🤖 Bot DMR4 listo para envíos");
+// ---------------------------------------------------------
+// UTILIDADES DE FORMATO
+// ---------------------------------------------------------
+const obtenerFecha = () => new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });
 
-// ----------------------
-// UTILIDADES
-// ----------------------
-
+// ---------------------------------------------------------
+// ENVÍO DE MENSAJES CON SOPORTE DE FRAGMENTACIÓN
+// ---------------------------------------------------------
 async function enviarMensaje(texto) {
   if (!chatId) return;
-
   try {
-    // Telegram límite 4096 chars
     const partes = texto.match(/[\s\S]{1,4000}/g) || [texto];
-
     for (const parte of partes) {
       await bot.sendMessage(chatId, parte, { parse_mode: 'HTML' });
     }
-
   } catch (err) {
-    console.error("❌ Error enviando mensaje:", err.message);
+    console.error("❌ Error en el túnel de Telegram:", err.message);
   }
 }
 
-// ----------------------
-// ALERTAS INTELIGENTES
-// ----------------------
-
+// ---------------------------------------------------------
+// ALERTAS CON ESTRUCTURA VISUAL (ESTILO DASHBOARD)
+// ---------------------------------------------------------
 async function alerta(tipo, mensaje) {
-  const iconos = {
-    error: "❌",
-    warning: "⚠️",
-    success: "✅",
-    info: "ℹ️",
-    money: "💰"
+  const configuracion = {
+    error:   { icono: "🔴", titulo: "ERROR CRÍTICO" },
+    warning: { icono: "🟡", titulo: "ADVERTENCIA" },
+    success: { icono: "🟢", titulo: "ÉXITO" },
+    info:    { icono: "🔵", titulo: "SISTEMA" },
+    money:   { icono: "💵", titulo: "MERCADO" }
   };
 
-  const icono = iconos[tipo] || "🤖";
+  const conf = configuracion[tipo] || { icono: "🤖", titulo: "DMR4 NOTIFICACIÓN" };
 
-  const texto = `
-${icono} <b>DMR4 ALERTA</b>
-
-${mensaje}
+  const textoEstructurado = `
+${conf.icono} <b>${conf.titulo}</b>
+<code>------------------------------</code>
+<b>📌 Evento:</b> ${mensaje}
+<b>📅 Fecha:</b> <code>${obtenerFecha()}</code>
+<code>------------------------------</code>
+⚙️ <i>IA-DMR4 Autopilot Activo</i>
   `;
 
-  await enviarMensaje(texto);
+  await enviarMensaje(textoEstructurado);
 }
 
-// ----------------------
-// LOG REMOTO
-// ----------------------
-
+// ---------------------------------------------------------
+// LOG DE SISTEMA (ESTILO TERMINAL)
+// ---------------------------------------------------------
 async function logSistema(msg) {
-  const texto = `📊 <b>LOG DMR4</b>\n\n${msg}`;
-  await enviarMensaje(texto);
+  const textoLog = `
+📊 <b>DMR4 SYSTEM LOG</b>
+<code>______________________________</code>
+<pre>
+${msg}
+</pre>
+<code>______________________________</code>
+📡 <i>Nodo: Oppo-A57</i>
+  `;
+  await enviarMensaje(textoLog);
 }
-
-// ----------------------
 
 module.exports = {
   bot,
@@ -84,3 +84,4 @@ module.exports = {
   alerta,
   logSistema
 };
+
