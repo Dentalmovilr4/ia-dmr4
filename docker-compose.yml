@@ -1,6 +1,7 @@
 version: "3.9"
 
 services:
+  # --- INFRAESTRUCTURA CORE ---
   redis:
     image: redis:7-alpine
     container_name: dmr4-redis
@@ -10,6 +11,7 @@ services:
     networks:
       - dmr4-net
 
+  # --- CONTROL Y ORQUESTACIÓN (Original + Nuevo) ---
   orchestrator:
     build: .
     container_name: orchestrator
@@ -27,6 +29,75 @@ services:
     networks:
       - dmr4-net
 
+  control_plane:
+    build: .
+    container_name: dmr4-control-plane
+    command: node controlPlane.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
+  # --- INTELIGENCIA, RIESGO Y ALPHA LAB ---
+  risk_engine:
+    build: .
+    container_name: dmr4-risk-engine
+    command: node RiskEngine.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
+  alpha_lab:
+    build: .
+    container_name: dmr4-alpha-lab
+    command: node AlphaResearchLab.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
+  portfolio_opt:
+    build: .
+    container_name: dmr4-portfolio-opt
+    command: node portfolioOptimizer.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
+  # --- EJECUCIÓN Y OPERACIONES ---
+  fund_system:
+    build: .
+    container_name: dmr4-fund-system
+    command: node fundSystem.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
+  execution_algo:
+    build: .
+    container_name: dmr4-execution-algo
+    command: node ExecutionAlgo.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
+  # --- WORKERS ESCALABLES Y AUTOSCALER ---
   worker:
     build: .
     command: node workerNode.js
@@ -42,6 +113,17 @@ services:
     networks:
       - dmr4-net
 
+  ultra_worker_1:
+    build: .
+    container_name: dmr4-ultra-worker-1
+    command: node ultraWorker.js
+    depends_on:
+      - redis
+    env_file: .env
+    restart: always
+    networks:
+      - dmr4-net
+
   autoscaler:
     build: .
     container_name: dmr4-autoscaler
@@ -54,6 +136,7 @@ services:
     networks:
       - dmr4-net
 
+  # --- MONITOREO Y ALERTAS ---
   alert-bridge:
     build: .
     container_name: alert-bridge
