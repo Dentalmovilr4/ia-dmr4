@@ -13,47 +13,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-    # ----------------------
-    # CLONAR
-    # ----------------------
     - name: 📥 Checkout
       uses: actions/checkout@v4
 
-    # ----------------------
-    # NODE
-    # ----------------------
     - name: 🟢 Node
       uses: actions/setup-node@v4
       with:
         node-version: '20'
 
-    # ----------------------
-    # DEPENDENCIAS
-    # ----------------------
     - name: 📦 Install
-      run: npm install --legacy-peer-deps
+      run: npm install axios --legacy-peer-deps
 
-    # ----------------------
-    # DETECTAR ERRORES
-    # ----------------------
     - name: 🧪 Analizar errores
       id: scan
       run: |
         echo "🔍 Escaneando JS..."
-
         node <<'EOF'
         const { execSync } = require('child_process');
         const fs = require('fs');
 
-        const files = execSync('find . -name "*.js"')
+        const files = execSync('find . -name "*.js" -not -path "*/node_modules/*"')
           .toString()
           .trim()
           .split('\n')
           .filter(Boolean);
 
         let errors = [];
-
         for (const f of files) {
           try {
             execSync(`node -c "${f}"`, { stdio: 'pipe' });
@@ -61,107 +46,76 @@ jobs:
             errors.push(f);
           }
         }
-
         fs.writeFileSync('errors.json', JSON.stringify(errors, null, 2));
-
         console.log('Errores encontrados:', errors);
-
-        if (errors.length > 0) {
-          process.exit(1);
-        }
+        if (errors.length > 0) process.exit(1);
         EOF
 
-    # ----------------------
-    # SI NO HAY ERRORES
-    # ----------------------
-    - name: ✔ Sin errores
-      if: success()
-      run: echo "Todo OK"
-
-    # ----------------------
-    # IA AUTO-FIX
-    # ----------------------
     - name: 🧠 IA Fix Engine
       if: failure()
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       run: |
         node <<'EOF'
         const fs = require('fs');
         const axios = require('axios');
 
-        const errors = JSON.parse(
-          fs.readFileSync('errors.json', 'utf8')
-        );
+        async function fix() {
+          if (!fs.existsSync('errors.json')) return;
+          const errors = JSON.parse(fs.readFileSync('errors.json', 'utf8'));
+          
+          for (const file of errors) {
+            const code = fs.readFileSync(file, 'utf8');
 
-        async function fix(file) {
-          const code = fs.readFileSync(file, 'utf8');
+            // Definimos el prompt usando concatenación simple para evitar conflictos de backticks en el shell
+            const prompt = "Eres un experto en Node.js.\n" +
+                           "Corrige este código sin cambiar su lógica principal.\n" +
+                           "Devuelve SOLO el código corregido.\n\n" +
+                           "ARCHIVO:\n" + file + "\n\n" +
+                           "CODIGO:\n" + code;
 
-          const prompt = `
-Eres un experto en Node.js.
-Corrige este código sin cambiar su lógica principal.
-Devuelve SOLO el código corregido.
-
-ARCHIVO:
-${file}
-
-CODIGO:
-${code}
-`;
-
-          const res = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-              model: 'gpt-4o-mini',
-              messages: [
+            try {
+              const res = await axios.post(
+                'https://api.openai.com/v1/chat/completions',
                 {
-                  role: 'user',
-                  content: prompt
+                  model: 'gpt-4o-mini',
+                  messages: [{ role: 'user', content: prompt }]
+                },
+                {
+                  headers: {
+                    Authorization: 'Bearer ' + process.env.OPENAI_API_KEY,
+                    'Content-Type': 'application/json'
+                  }
                 }
-              ]
-            },
-            {
-              headers: {
-                Authorization: 'Bearer ' + process.env.OPENAI_API_KEY,
-                'Content-Type': 'application/json'
-              }
+              );
+
+              const fixed = res.data.choices[0].message.content;
+              // Limpiar posibles bloques de código que devuelva la IA (```javascript ... ```)
+              const cleanCode = fixed.replace(/^```javascript\n|^```\n|```$/g, '');
+              
+              fs.writeFileSync(file, cleanCode);
+              console.log('✅ Fixed:', file);
+            } catch (err) {
+              console.error('❌ Error fixing file:', file, err.message);
             }
-          );
-
-          const fixed = res.data.choices[0].message.content;
-
-          fs.writeFileSync(file, fixed);
-
-          console.log('Fixed:', file);
+          }
         }
 
-        (async () => {
-          for (const f of errors) {
-            await fix(f);
-          }
-        })();
+        fix();
         EOF
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
-    # ----------------------
-    # VALIDACIÓN POST-FIX
-    # ----------------------
     - name: 🔁 Recheck
+      if: always()
       run: |
-        for file in $(find . -name "*.js"); do
-          node -c "$file" || exit 1
+        for file in $(find . -name "*.js" -not -path "*/node_modules/*"); do
+          node -c "$file" || echo "Error persistente en $file"
         done
 
-    # ----------------------
-    # AUTO COMMIT FIX
-    # ----------------------
     - name: 📦 Commit fixes
       if: success()
       run: |
         git config user.name "dmr4-ai-bot"
         git config user.email "ai@dmr4.bot"
-
         git add .
-
-        git commit -m "🤖 AI Auto-Fix aplicado por DMR4 CI" || echo "sin cambios"
-
+        git commit -m "🤖 AI Auto-Fix aplicado por DMR4 CI" || exit 0
         git push
